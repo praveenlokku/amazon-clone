@@ -85,7 +85,8 @@ class Review(models.Model):
         return str(self.rating)
 
 class OTP(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='otps')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='otps', null=True, blank=True)
+    email = models.EmailField(null=True, blank=True)
     code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
     is_used = models.BooleanField(default=False)

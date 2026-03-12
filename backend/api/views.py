@@ -14,8 +14,9 @@ from .serializers import (
 from .amazon_service import AmazonService
 from django.db.models import Q
 import random
-import resend
 import os
+from django.core.mail import EmailMultiAlternatives
+from django.conf import settings
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
@@ -166,7 +167,8 @@ def registerUser(request):
         message = {'detail': 'User with this email already exists'}
         return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
-resend.api_key = os.getenv('RESEND_API_KEY')
+
+# Native Django Email configuration
 
 @api_view(['POST'])
 def send_otp(request):
@@ -177,56 +179,102 @@ def send_otp(request):
         return Response({'detail': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        user = User.objects.get(email=email)
+        # Check if user exists (for login flow)
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            user = None
         
         # Generate 6 digit OTP
         otp_code = str(random.randint(100000, 999999))
         
         # Create OTP record
-        OTP.objects.create(user=user, code=otp_code)
+        OTP.objects.create(user=user, email=email, code=otp_code)
         
-        # Send Email
-        params = {
-            "from": "Acme <onboarding@resend.dev>",
-            "to": [email],
-            "subject": "Your Amazon Clone OTP",
-            "html": f"<strong>Your one-time password is: {otp_code}</strong>",
-        }
-        resend.Emails.send(params)
+        # LOGGING FOR DEVELOPMENT: Print OTP to console
+        print(f"\n[OTP DEBUG] Verification code for {email}: {otp_code}\n")
+        
+        # Send Email using native Django code
+        subject = f"{otp_code} is your Amazon Clone verification code"
+        from_email = settings.DEFAULT_FROM_EMAIL
+        to_email = [email]
+        
+        html_content = f"""
+            <div style="font-family: Arial, sans-serif; color: #111; max-width: 600px; margin: 0 auto; border: 1px solid #e7eaf3; padding: 40px; border-radius: 8px;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <img src="https://pngimg.com/uploads/amazon/amazon_PNG11.png" alt="Amazon Logo" style="height: 40px;">
+                </div>
+                <h1 style="font-size: 28px; font-weight: 500; margin-bottom: 20px;">Verify your email address</h1>
+                <p style="font-size: 16px; line-height: 1.5; margin-bottom: 30px;">
+                    To verify your email address, please use the following One-Time Password (OTP):
+                </p>
+                <div style="font-size: 32px; font-weight: bold; color: #c45500; text-align: center; border: 1px solid #ddd; padding: 20px; border-radius: 4px; margin-bottom: 30px; letter-spacing: 5px;">
+                    {otp_code}
+                </div>
+                <p style="font-size: 14px; color: #555; line-height: 1.5;">
+                    Do not share this OTP with anyone. Amazon takes your account security very seriously. 
+                    Amazon Customer Service will never ask you to disclose or verify your Amazon password, OTP, credit card, or banking account number.
+                </p>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 40px 0;">
+                <p style="font-size: 12px; color: #777; text-align: center;">
+                    © 2026 Amazon Clone, Inc. or its affiliates. All rights reserved.
+                </p>
+            </div>
+        """
+        
+        text_content = f"Your Amazon Clone verification code is {otp_code}. Do not share this with anyone."
+        
+        try:
+            msg = EmailMultiAlternatives(subject, text_content, from_email, to_email)
+            msg.attach_alternative(html_content, "text/html")
+            msg.send()
+        except Exception as email_error:
+            print(f"[OTP ERROR] Failed to send email via Django: {email_error}")
+            # Still returning success message as the code is in the database and console for dev
+            return Response({'detail': 'OTP generated. Please check server console if email delivery fails.'})
 
         return Response({'detail': 'OTP sent successfully to email'})
 
-    except User.DoesNotExist:
-        return Response({'detail': 'User with this email does not exist'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        print(f"Error sending OTP: {e}")
-        return Response({'detail': 'Failed to send OTP'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        print(f"[CRITICAL ERROR] send_otp view failed: {e}")
+        return Response({'detail': f'Error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 def verify_otp(request):
     data = request.data
     email = data.get('email')
     code = data.get('code')
+    is_registration = data.get('is_registration', False)
 
     if not email or not code:
         return Response({'detail': 'Email and code are required'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        user = User.objects.get(email=email)
-        otp = OTP.objects.filter(user=user, code=code, is_used=False).order_by('-created_at').first()
+        # Find the latest unused OTP for this email
+        otp = OTP.objects.filter(email=email, code=code, is_used=False).order_by('-created_at').first()
 
         if otp:
             otp.is_used = True
             otp.save()
             
-            # Login the user
-            serializer = UserSerializerWithToken(user, many=False)
-            return Response(serializer.data)
+            # If it's a login flow, return user data
+            if not is_registration:
+                try:
+                    user = User.objects.get(email=email)
+                    serializer = UserSerializerWithToken(user, many=False)
+                    return Response(serializer.data)
+                except User.DoesNotExist:
+                    # This shouldn't happen if user exists check was done in send_otp login flow
+                    return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+            
+            # For registration, just return success
+            return Response({'detail': 'OTP verified successfully'})
         else:
             return Response({'detail': 'Invalid or expired OTP'}, status=status.HTTP_400_BAD_REQUEST)
 
-    except User.DoesNotExist:
-        return Response({'detail': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        print(f"Error verifying OTP: {e}")
+        return Response({'detail': 'Verification failed'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

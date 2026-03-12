@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../utils/api.js';
 import { useStateValue } from '../StateProvider.jsx';
 import { ChevronRight, MapPin, CreditCard, ChevronDown, CheckCircle, Printer, RotateCcw, Package } from 'lucide-react';
 
@@ -24,7 +25,7 @@ function OrderDetailsPage() {
                         Authorization: `Bearer ${user.token}`
                     }
                 };
-                const { data } = await axios.get(`http://localhost:8000/api/orders/${id}/`, config);
+                const { data } = await axios.get(`${API_BASE_URL}/api/orders/${id}/`, config);
                 setOrder(data);
                 setLoading(false);
             } catch (error) {

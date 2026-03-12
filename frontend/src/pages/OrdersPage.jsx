@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../utils/api.js';
 import { useStateValue } from '../StateProvider.jsx';
 import { useNavigate, Link } from 'react-router-dom';
 import { Search, ChevronDown, ChevronRight, Package, Truck, CheckCircle, AlertCircle, XCircle, RotateCcw } from 'lucide-react';
@@ -39,7 +40,7 @@ function OrdersPage() {
                         Authorization: `Bearer ${user.token}`
                     }
                 };
-                const { data } = await axios.get('http://localhost:8000/api/orders/my/', config);
+                const { data } = await axios.get(`${API_BASE_URL}/api/orders/my/`, config);
                 setOrders(data);
                 setLoading(false);
             } catch (error) {

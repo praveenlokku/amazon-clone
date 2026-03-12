@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../utils/api.js';
 import { CheckCircle } from 'lucide-react';
 
 function ConfirmationPage() {
@@ -11,7 +12,7 @@ function ConfirmationPage() {
     useEffect(() => {
         const fetchOrder = async () => {
             try {
-                const { data } = await axios.get(`http://localhost:8000/api/orders/${id}/`);
+                const { data } = await axios.get(`${API_BASE_URL}/api/orders/${id}/`);
                 setOrder(data);
                 setLoading(false);
             } catch (error) {

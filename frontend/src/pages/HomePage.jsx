@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../utils/api.js';
 import ProductCard from '../components/ProductCard';
 import HomeCard from '../components/HomeCard';
 import HeroSlider from '../components/HeroSlider';
@@ -22,14 +23,14 @@ function HomePage() {
             const category = query.get('c');
 
             try {
-                let url = 'http://localhost:8000/api/amazon/search/?keyword=bestsellers';
+                let url = `${API_BASE_URL}/api/amazon/search/?keyword=bestsellers`;
 
                 // If there's a search term, use the new REAL Amazon API endpoint
                 if (searchTerm) {
-                    url = `http://localhost:8000/api/amazon/search/?keyword=${searchTerm}`;
+                    url = `${API_BASE_URL}/api/amazon/search/?keyword=${searchTerm}`;
                     if (category) url += `&category=${category}`;
                 } else if (category) {
-                    url = `http://localhost:8000/api/amazon/search/?keyword=${category}`;
+                    url = `${API_BASE_URL}/api/amazon/search/?keyword=${category}`;
                 }
 
                 const { data } = await axios.get(url);

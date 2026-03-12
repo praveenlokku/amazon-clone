@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../utils/api.js';
 import { Star, MapPin, ChevronRight, Lock, User, CheckCircle, Info } from 'lucide-react';
 import { useStateValue } from '../StateProvider.jsx';
 import ProductCarouselRow from '../components/ProductCarouselRow';
@@ -51,14 +52,14 @@ function ProductDetailPage() {
             setLoading(true);
             try {
                 // First try fetching from local DB
-                const { data } = await axios.get(`http://localhost:8000/api/products/${id}/`);
+                const { data } = await axios.get(`${API_BASE_URL}/api/products/${id}/`);
                 setProduct(data);
                 setActiveImage(data.image);
                 setLoading(false);
             } catch (error) {
                 // If not in local DB, it might be a REAL Amazon product from our search
                 try {
-                    const { data: realData } = await axios.get(`http://localhost:8000/api/amazon/product/${id}/`);
+                    const { data: realData } = await axios.get(`${API_BASE_URL}/api/amazon/product/${id}/`);
                     setProduct(realData);
                     setActiveImage(realData.image);
                     setLoading(false);
@@ -82,9 +83,9 @@ function ProductDetailPage() {
                 keyword = product.brand;
             }
             try {
-                const { data } = await axios.get(`http://localhost:8000/api/amazon/search/?keyword=${keyword}`);
-                if (Array.isArray(data)) {
-                    setRecommendations(data.filter(p => p._id !== product._id && p.asin !== (product.asin || id)).slice(0, 15));
+                const { data: recData } = await axios.get(`${API_BASE_URL}/api/amazon/search/?keyword=${keyword}`);
+                if (Array.isArray(recData)) { // Changed 'data' to 'recData' here
+                    setRecommendations(recData.filter(p => p._id !== product._id && p.asin !== (product.asin || id)).slice(0, 15));
                 }
             } catch (error) {
                 console.error("Error fetching recommendations", error);
@@ -138,7 +139,7 @@ function ProductDetailPage() {
                 }
             };
             await axios.post(
-                `http://localhost:8000/api/products/${product._id}/reviews/`,
+                `${API_BASE_URL}/api/products/${product._id}/reviews/`,
                 { rating, comment },
                 config
             );

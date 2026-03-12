@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../utils/api.js';
 import { Lock } from 'lucide-react';
 import { useStateValue, getCartTotal } from '../StateProvider.jsx';
 
@@ -49,7 +50,7 @@ function CheckoutPage() {
                 },
             };
 
-            const { data } = await axios.post('http://localhost:8000/api/orders/add/', orderData, config);
+            const { data } = await axios.post(`${API_BASE_URL}/api/orders/add/`, orderData, config);
             dispatch({ type: 'EMPTY_CART' });
             navigate(`/confirmation/${data._id}`);
         } catch (error) {

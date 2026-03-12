@@ -23,7 +23,7 @@ const safeParse = (key, fallback) => {
 export const initialState = {
     cart: safeParse('cart', []),
     user: safeParse('user', null),
-    location: safeParse('location', { city: 'Greater Noida', pincode: '201310' }),
+    location: safeParse('location', { city: '', pincode: '' }),
     language: safeParse('language', { code: 'EN', name: 'English' }),
 };
 

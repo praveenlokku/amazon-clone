@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useStateValue } from '../StateProvider.jsx';
 import axios from 'axios';
 import { countryCodes } from '../utils/countryCodes.js';
+import { API_BASE_URL } from '../utils/api.js';
 
 function Login() {
     const navigate = useNavigate();
@@ -25,23 +26,9 @@ function Login() {
         }
     };
 
-    const requestOtp = async (e) => {
+    const requestOtp = (e) => {
         e.preventDefault();
-        setLoading(true);
-        try {
-            const config = { headers: { 'Content-Type': 'application/json' } };
-            await axios.post(
-                'http://localhost:8000/api/users/send-otp/',
-                { 'email': email },
-                config
-            );
-            setIsOtpFlow(true);
-            setStep(3); // Go to OTP entry step
-        } catch (error) {
-            alert(error.response?.data?.detail || "Failed to send OTP. Please try again.");
-        } finally {
-            setLoading(false);
-        }
+        alert("OTP Sign-in feature will be implemented very soon. Please use your password for now.");
     };
 
     const verifyOtp = async (e) => {
@@ -55,7 +42,7 @@ function Login() {
         try {
             const config = { headers: { 'Content-Type': 'application/json' } };
             const { data } = await axios.post(
-                'http://localhost:8000/api/users/verify-otp/',
+                `${API_BASE_URL}/api/users/verify-otp/`,
                 { 'email': email, 'code': otpCode },
                 config
             );
@@ -86,7 +73,7 @@ function Login() {
                 };
 
                 const { data } = await axios.post(
-                    'http://localhost:8000/api/users/login/',
+                    `${API_BASE_URL}/api/users/login/`,
                     { 'username': email, 'password': password },
                     config
                 );
@@ -127,9 +114,9 @@ function Login() {
                         <form className="space-y-4" onSubmit={handleContinue}>
                             <div>
                                 <label className="block text-[13px] font-bold mb-[2px]">Enter mobile number or email</label>
-                                <div className={`flex ${(email && /\d/.test(email)) ? 'gap-[6px]' : ''}`}>
-                                    {/* Country Code Dropdown - Only show if string contains numbers */}
-                                    {(email && /\d/.test(email)) && (
+                                <div className={`flex ${(email && /^\d+$/.test(email.replace(/[\s+()-]/g, '')) && !email.includes('@')) ? 'gap-[6px]' : ''}`}>
+                                    {/* Country Code Dropdown - Only show if string looks like a phone number (digits and no @) */}
+                                    {(email && /^\d+$/.test(email.replace(/[\s+()-]/g, '')) && !email.includes('@')) && (
                                         <div className="relative flex-shrink-0">
                                             <div
                                                 className="flex bg-[#f3f3f3] hover:bg-[#e7e9ec] border border-[#a6a6a6] rounded-[3px] items-center px-2 py-[7px] cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.15)_inset] transition-colors h-full"
@@ -188,7 +175,6 @@ function Login() {
                                     </div>
                                 </div>
                             </div>
-
 
                             <button
                                 type="submit"
@@ -275,58 +261,15 @@ function Login() {
                         Sign in with a passkey
                     </button>
 
-                    <button
-                        className="w-full bg-white hover:bg-[#f7f8fa] border border-[#d5d9d9] py-[5px] shadow-[0_2px_5px_rgba(213,217,217,0.5)] text-[13px] rounded-[8px] transition-colors font-normal mt-3"
-                        onClick={requestOtp}
-                        disabled={loading}
-                    >
-                        {loading ? 'Sending...' : 'Get an OTP on your email'}
-                    </button>
-                </div>
-            )}
-
-            {step === 3 && (
-                <div className="w-[350px] border border-[#ddd] rounded-[8px] p-[26px] pb-[22px] flex flex-col z-10">
-                    <h1 className="text-[28px] font-normal mb-2 leading-[1.2]">Verification required</h1>
-
-                    <p className="text-[13px] mb-4">
-                        To continue, complete this verification step. We've sent an OTP to the email <span className="font-bold">{email}</span>. Please enter it below.
-                    </p>
-
-                    <form className="space-y-[14px]" onSubmit={verifyOtp}>
-                        <div>
-                            <div className="flex justify-between items-baseline mb-[2px]">
-                                <label className="block text-[13px] font-bold">Enter OTP</label>
-                            </div>
-                            <input
-                                type="text"
-                                maxLength="6"
-                                className="w-full border border-[#a6a6a6] p-[6px] px-2 rounded-[3px] outline-none focus:border-[#007185] focus:shadow-[0_0_0_3px_#c8f3fa,inset_0_1px_2px_rgba(15,11,17,.15)] shadow-[0_1px_2px_rgba(0,0,0,0.2)_inset] tracking-widest text-center"
-                                value={otpCode}
-                                onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                                autoFocus
-                            />
-                        </div>
-
-                        <button
-                            type="submit"
-                            className="w-full py-[5px] text-[13px] font-normal rounded-[8px] hover:bg-[#F7CA00] bg-[#FFD814] border border-[#FCD200] shadow-[0_1px_2px_rgba(0,0,0,0.1)] transition-colors"
-                            disabled={loading}
-                        >
-                            {loading ? 'Verifying...' : 'Continue'}
-                        </button>
-                    </form>
-
-                    <div className="mt-4 text-center">
-                        <span
-                            className="text-[13px] text-[#0066c0] hover:text-[#c45500] hover:underline cursor-pointer"
-                            onClick={requestOtp}
-                        >
-                            Resend OTP
-                        </span>
+                    <div className="mt-4 p-3 bg-gray-50 rounded border border-gray-200">
+                        <p className="text-[12px] text-gray-500 italic text-center">
+                            OTP Sign-in feature will be implemented very soon.
+                        </p>
                     </div>
                 </div>
             )}
+
+            {/* Step 3 (OTP Verification) removed as requested */}
 
             <div className={`border-t border-[#e7e7e7] w-full flex flex-col items-center pt-8 bg-gradient-to-t from-white to-[#fafafa] flex-grow ${step === 2 ? 'mt-8' : 'mt-0'}`}>
                 <div className="flex space-x-7 text-[11px] text-[#0066c0]">

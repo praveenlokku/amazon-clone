@@ -77,8 +77,8 @@ function Header() {
                     >
                         <MapPin className="h-[18px] mt-3 mr-0.5" />
                         <div className="flex flex-col justify-center mt-2">
-                            <p className="text-[#ccc] text-[12px] leading-tight font-normal">{t.deliverTo} {user ? user.name?.split(' ')[0] : 'Nithin'}</p>
-                            <p className="font-bold leading-tight text-[14px]">{location.city} {location.pincode}</p>
+                            <p className="text-[#ccc] text-[12px] leading-tight font-normal">{t.deliverTo} {user ? user.name?.split(' ')[0] : ''}</p>
+                            <p className="font-bold leading-tight text-[14px]">{(location.city || location.pincode) ? `${location.city} ${location.pincode}` : 'Select your address'}</p>
                         </div>
                     </div>
 
