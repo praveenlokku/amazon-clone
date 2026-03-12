@@ -78,7 +78,14 @@ function CartPage() {
                             </div>
 
                             <button
-                                onClick={() => user ? navigate('/checkout') : navigate('/login')}
+                                onClick={() => {
+                                    if (user) {
+                                        navigate('/checkout');
+                                    } else {
+                                        alert("Please login to continue with the order");
+                                        navigate('/login');
+                                    }
+                                }}
                                 className="button w-full py-2 text-[14px] font-medium rounded-lg shadow-sm mt-2 active:scale-95"
                             >
                                 Proceed to Buy

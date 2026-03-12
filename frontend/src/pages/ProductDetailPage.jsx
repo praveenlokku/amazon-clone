@@ -118,6 +118,11 @@ function ProductDetailPage() {
     };
 
     const buyNow = () => {
+        if (!user) {
+            alert("Please login to continue with the order");
+            navigate('/login');
+            return;
+        }
         if (!isInCart) {
             addToCart();
         }
@@ -342,8 +347,8 @@ function ProductDetailPage() {
                     <div className="relative">
                         <div className="flex items-baseline text-[#0f1111]">
                             <span className="text-[14px] align-top mt-1 font-medium">₹</span>
-                            <span className="text-3xl font-bold tracking-tight">{Math.floor(product.price || 0)}</span>
-                            <span className="text-[14px] align-top mt-1 font-medium">{((product.price || 0) % 1).toFixed(2).substring(2) || '00'}</span>
+                            <span className="text-3xl font-bold tracking-tight">{Math.floor((product.price * qty) || 0)}</span>
+                            <span className="text-[14px] align-top mt-1 font-medium">{(((product.price * qty) || 0) % 1).toFixed(2).substring(2) || '00'}</span>
                         </div>
                         <div className="flex items-center mt-1">
                             <PrimeBadge />

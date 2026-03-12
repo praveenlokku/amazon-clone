@@ -157,8 +157,8 @@ function CheckoutPage() {
                                     <img className="h-24 w-24 object-contain" src={item.image} alt={item.name} />
                                     <div className="flex-grow">
                                         <p className="font-bold text-[14px] text-[#0f1111] line-clamp-2">{item.name}</p>
-                                        <p className="text-[#b12704] font-bold text-[14px] mt-1">₹{item.price.toFixed(2)}</p>
-                                        <p className="text-[12px] mt-1 font-bold">Quantity: {item.qty}</p>
+                                        <p className="text-[#b12704] font-bold text-[14px] mt-1">₹{(item.price * item.qty).toFixed(2)}</p>
+                                        <p className="text-[12px] mt-1 font-bold font-medium">Qty: {item.qty}</p>
                                         <p className="text-[12px] text-gray-500 mt-2">Sold by: Amazon</p>
                                     </div>
                                     <div className="text-[12px] text-gray-600 hidden md:block">

@@ -69,7 +69,14 @@ function CartItem({ id, title, price, rating, image, qty }) {
             </div>
 
             <div className="flex-shrink-0 text-right">
-                <p className="text-[18px] font-bold text-[#0f1111]">₹{Number(price || 0).toFixed(2)}</p>
+                <p className="text-[18px] font-bold text-[#0f1111]">
+                    ₹{(Number(price || 0) * qty).toFixed(2)}
+                </p>
+                {qty > 1 && (
+                    <p className="text-[12px] text-gray-500">
+                        (₹{Number(price || 0).toFixed(2)} each)
+                    </p>
+                )}
             </div>
         </div>
     );

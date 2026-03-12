@@ -26,6 +26,16 @@ function Signup() {
             return;
         }
 
+        // Security check: capital, special char, number
+        const hasCapital = /[A-Z]/.test(password);
+        const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+
+        if (!hasCapital || !hasSpecial || !hasNumber) {
+            alert("Password must include at least one capital letter, one special character, and one number for improved security.");
+            return;
+        }
+
         setLoading(true);
         try {
             // Register User directly

@@ -208,25 +208,25 @@ function Header() {
                     <Menu className="h-5 w-5 mr-1 stroke-[2px]" />
                     <span>{t.all}</span>
                 </div>
-                <div className="flex items-center cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.fresh} <ChevronDown className="h-4 w-4 ml-0.5 mt-0.5 text-gray-400" /></div>
-                <div className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.mxPlayer}</div>
-                <div className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.sell}</div>
-                <div className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.bestSellers}</div>
-                <div className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.mobiles}</div>
-                <div className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.customerService}</div>
-                <div className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.todaysDeals}</div>
-                <div className="flex items-center cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.prime} <ChevronDown className="h-4 w-4 ml-0.5 mt-0.5 text-gray-400" /></div>
-                <div className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.newReleases}</div>
-                <div className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.fashion}</div>
-                <div className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.amazonPay}</div>
-                <div className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.electronics}</div>
-                <div className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.homeKitchen}</div>
-                <div className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.toysGames}</div>
-                <div className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.computers}</div>
-                <div className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.books}</div>
-                <div className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.giftCards}</div>
-                <div className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.beautyPersonalCare}</div>
-                <div className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all pr-4">{t.carMotorbike}</div>
+                <Link to="/?s=fresh" className="flex items-center cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.fresh} <ChevronDown className="h-4 w-4 ml-0.5 mt-0.5 text-gray-400" /></Link>
+                <Link to="/?s=mxplayer" className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.mxPlayer}</Link>
+                <Link to="/?s=sell" className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.sell}</Link>
+                <Link to="/?s=bestsellers" className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.bestSellers}</Link>
+                <Link to="/?s=mobiles" className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.mobiles}</Link>
+                <Link to="/?s=customer+service" className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.customerService}</Link>
+                <Link to="/?s=deals" className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.todaysDeals}</Link>
+                <Link to="/?s=prime" className="flex items-center cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.prime} <ChevronDown className="h-4 w-4 ml-0.5 mt-0.5 text-gray-400" /></Link>
+                <Link to="/?s=new+releases" className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.newReleases}</Link>
+                <Link to="/?s=fashion" className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.fashion}</Link>
+                <Link to="/?s=amazon+pay" className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.amazonPay}</Link>
+                <Link to="/?s=electronics" className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.electronics}</Link>
+                <Link to="/?s=home+kitchen" className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.homeKitchen}</Link>
+                <Link to="/?s=toys+games" className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.toysGames}</Link>
+                <Link to="/?s=computers" className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.computers}</Link>
+                <Link to="/?s=books" className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.books}</Link>
+                <Link to="/?s=gift+cards" className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.giftCards}</Link>
+                <Link to="/?s=beauty" className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all">{t.beautyPersonalCare}</Link>
+                <Link to="/?s=car+motorbike" className="cursor-pointer border border-transparent hover:border-white px-2 py-[5px] rounded-[1px] h-[32px] transition-all pr-4">{t.carMotorbike}</Link>
             </div>
 
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
