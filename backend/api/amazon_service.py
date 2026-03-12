@@ -16,6 +16,26 @@ class AmazonService:
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'Accept-Language': 'en-US,en;q=0.9',
     }
+    
+    @staticmethod
+    def clean_amazon_url(url):
+        """
+        Cleans an Amazon image URL to get the highest resolution version.
+        Removes modifiers like ._AC_SY200_ or ._SR100,100_
+        """
+        if not url or not isinstance(url, str):
+            return url
+        
+        # Amazon image URLs often look like: 
+        # https://m.media-amazon.com/images/I/71657TiFeHL._AC_SY200_.jpg
+        # We want: https://m.media-amazon.com/images/I/71657TiFeHL.jpg
+        # Or: https://m.media-amazon.com/images/I/71657TiFeHL._SX679_.jpg (which is also high res)
+        
+        # Regex to find the part between the last dot before the extension and the extension
+        import re
+        # This matches the period followed by underscore and alphanumeric characters until another period
+        cleaned_url = re.sub(r'\._[A-Z0-9,_-]+\.', '.', url)
+        return cleaned_url
 
     @classmethod
     def search_products(cls, search_term, category_name=None):
@@ -53,6 +73,8 @@ class AmazonService:
                 
                 img_elem = item.find('img', {'class': 's-image'})
                 image = img_elem.get('src') if img_elem else ''
+                # Clean the image URL for search results too
+                image = cls.clean_amazon_url(image)
                 
                 rating_elem = item.find('span', {'class': 'a-icon-alt'})
                 rating_text = rating_elem.text if rating_elem else '4.0 out of 5 stars'
@@ -90,9 +112,116 @@ class AmazonService:
         """Fetches product details, prioritizing local DB cache."""
         try:
             product = Product.objects.get(asin=asin)
+            
+            # If product exists but has no additional images, try to fetch them
+            import json
+            try:
+                gallery = json.loads(product.additional_images or '[]')
+                if not gallery or len(gallery) <= 1:
+                    cls.fetch_full_product_info(asin)
+                    product.refresh_from_db()
+            except:
+                cls.fetch_full_product_info(asin)
+                product.refresh_from_db()
+
             return cls._serialize_product(product)
         except Product.DoesNotExist:
-            return None
+            # If not in DB, we could fetch it now
+            cls.fetch_full_product_info(asin)
+            try:
+                product = Product.objects.get(asin=asin)
+                return cls._serialize_product(product)
+            except Product.DoesNotExist:
+                return None
+
+    @classmethod
+    def fetch_full_product_info(cls, asin):
+        """Scrapes the actual product page for gallery and full details."""
+        if not asin: return
+        
+        url = f"https://www.amazon.in/dp/{asin}"
+        try:
+            time.sleep(random.uniform(1.5, 3)) # Slightly longer delay
+            response = requests.get(url, headers=cls.HEADERS, timeout=15)
+            if response.status_code != 200:
+                print(f"Failed to fetch product page for {asin}: {response.status_code}")
+                return
+
+            soup = BeautifulSoup(response.content, 'lxml')
+            
+            # 1. Extract Images Gallery
+            images = []
+            
+            # Primary strategy: look for colorImages in script tags
+            scripts = soup.find_all('script', type='text/javascript')
+            for script in scripts:
+                if script.string and 'colorImages' in script.string:
+                    import re
+                    import json
+                    # Refine regex to be more robust
+                    # Look for "colorImages": { ... } or 'colorImages': { ... }
+                    match = re.search(r'["\']colorImages["\']:\s*({.*?}),\s*["\']columnLayout["\']', script.string, re.DOTALL)
+                    if match:
+                        try:
+                            # Amazon's JSON might have single quotes and other non-standard things
+                            json_str = match.group(1).replace("'", '"')
+                            # Basic cleanup for escaping
+                            data = json.loads(json_str)
+                            
+                            # Standard layout is { 'initial': [ {hiRes:..., large:..., ...}, ... ] }
+                            initial_images = data.get('initial', [])
+                            for img_obj in initial_images:
+                                # Prioritize hiRes, then large
+                                hi_res = img_obj.get('hiRes') or img_obj.get('large') or img_obj.get('main', {}).get('url')
+                                if hi_res and isinstance(hi_res, str) and hi_res.startswith('http'):
+                                    cleaned = cls.clean_amazon_url(hi_res)
+                                    if cleaned not in images:
+                                        images.append(cleaned)
+                        except Exception as e:
+                            print(f"Error parsing colorImages JSON for {asin}: {e}")
+                    break
+            
+            # Secondary strategy: altImages thumbnails (only if primary failed)
+            if not images:
+                # Look for the thumbnail list
+                thumb_container = soup.select_one('#altImages') or soup.select_one('#imageBlock')
+                if thumb_container:
+                    thumbs = thumb_container.select('img')
+                    for thumb in thumbs:
+                        src = thumb.get('src')
+                        # Filter out very small images or icons
+                        if src and 'm.media-amazon.com/images/I/' in src:
+                            # Don't pick up common UI icons
+                            if any(x in src.lower() for x in ['play-icon', 'video-icon', 'sprite']):
+                                continue
+                            
+                            cleaned = cls.clean_amazon_url(src)
+                            if cleaned not in images:
+                                images.append(cleaned)
+
+            # 2. Extract Description (optional enhancement)
+            desc_elem = soup.select_one('#feature-bullets')
+            description = ""
+            if desc_elem:
+                bullets = desc_elem.select('li span.a-list-item')
+                description = "\n".join([b.text.strip() for b in bullets if b.text.strip() and not b.get('class')])
+
+            # 3. Update DB
+            if images:
+                import json
+                # Filter out obvious duplicates or very small images by URL check if possible
+                # But clean_amazon_url usually handles the 'hi-res' part
+                
+                # Update only if we found actual product images (at least 1)
+                Product.objects.filter(asin=asin).update(
+                    additional_images=json.dumps(images),
+                    image=images[0] if images else None,
+                    description=description or Product.objects.get(asin=asin).description
+                )
+                print(f"Updated gallery for {asin} with {len(images)} images.")
+
+        except Exception as e:
+            print(f"Error fetching full product info for {asin}: {e}")
 
     @classmethod
     def _map_and_save_results(cls, results, category_name):
@@ -118,21 +247,26 @@ class AmazonService:
             if not img.startswith('http'):
                 continue
 
+            defaults = {
+                'name': item.get('title')[:200] if item.get('title') else 'Unknown',
+                'image': img,
+                'price': price_val,
+                'rating': item.get('stars', 0),
+                'brand': item.get('brand', 'Amazon'),
+                'category': category,
+                'countInStock': random.randint(5, 50),
+                'description': item.get('description', '') or item.get('title', ''),
+            }
+
+            # Only update additional_images if we actually have new images, 
+            # otherwise keep existing ones from seed
+            new_imgs = item.get('additional_images', '[]')
+            if new_imgs and new_imgs != '[]':
+                defaults['additional_images'] = new_imgs
+
             product, created = Product.objects.update_or_create(
                 asin=asin,
-                defaults={
-                    'name': item.get('title')[:200] if item.get('title') else 'Unknown',
-                    'image': img,
-                    'price': price_val,
-                    'rating': item.get('stars', 0),
-                    'brand': item.get('brand', 'Amazon'),
-                    'category': category,
-                    'countInStock': random.randint(5, 50),
-                    'description': item.get('description') or item.get('title'),
-                    # For real Amazon items, we'll try to guess some variant images or just keep it empty for now
-                    # Real scraping of gallery images usually requires a separate request to the product page
-                    'additional_images': item.get('additional_images', '[]')
-                }
+                defaults=defaults
             )
             mapped.append(cls._serialize_product(product))
         return mapped
@@ -143,8 +277,11 @@ class AmazonService:
         import json
         try:
             additional_images = json.loads(product.additional_images or '[]')
+            # Fallback if additional_images is empty but we have a main image
+            if not additional_images and product.image:
+                additional_images = [product.image]
         except:
-            additional_images = []
+            additional_images = [product.image] if product.image else []
 
         try:
             specifications = json.loads(product.specifications or '{}')

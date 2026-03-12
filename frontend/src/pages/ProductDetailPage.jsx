@@ -172,7 +172,7 @@ function ProductDetailPage() {
                 {/* Left: Image Gallery */}
                 <div className="lg:w-1/2 flex flex-row gap-4 sticky top-24 self-start bg-white p-4">
                     {/* Thumbnails Sidebar */}
-                    <div className="flex flex-col space-y-2">
+                    <div className="flex flex-col space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                         {(Array.isArray(product.additional_images) && product.additional_images.length > 0
                             ? product.additional_images
                             : [product.image]
@@ -180,7 +180,7 @@ function ProductDetailPage() {
                             <div
                                 key={idx}
                                 onMouseEnter={() => setActiveImage(img)}
-                                className={`w-12 h-12 border-2 rounded-sm cursor-pointer overflow-hidden p-1 transition-all ${activeImage === img ? 'border-amazon-orange shadow-[0_0_5px_rgba(230,126,34,0.5)]' : 'border-gray-200 hover:border-gray-400'}`}
+                                className={`w-12 h-12 min-w-[48px] border-2 rounded-sm cursor-pointer overflow-hidden p-1 transition-all ${activeImage === img ? 'border-amazon-orange shadow-[0_0_5px_rgba(230,126,34,0.5)]' : 'border-gray-200 hover:border-gray-400'}`}
                             >
                                 <img src={img} alt={`${product.name} thumbnail ${idx}`} className="w-full h-full object-contain" />
                             </div>
@@ -189,12 +189,22 @@ function ProductDetailPage() {
 
                     {/* Main Image with Zoom */}
                     <div
-                        className="flex-grow flex justify-center relative overflow-hidden bg-white cursor-crosshair group pr-10 border border-gray-100 rounded-md"
+                        className="flex-grow flex justify-center relative bg-white cursor-crosshair group pr-10 border border-gray-100 rounded-md h-[500px]"
                         onMouseMove={(e) => {
                             const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
-                            const x = ((e.pageX - left - window.scrollX) / width) * 100;
-                            const y = ((e.pageY - top - window.scrollY) / height) * 100;
-                            setZoomPos({ x, y });
+                            const x = e.pageX - left - window.scrollX;
+                            const y = e.pageY - top - window.scrollY;
+
+                            // Lens size
+                            const lensSize = 150;
+                            // Clamp lens within boundaries
+                            const lensX = Math.max(0, Math.min(x - lensSize / 2, width - lensSize));
+                            const lensY = Math.max(0, Math.min(y - lensSize / 2, height - lensSize));
+
+                            const percentX = (lensX / (width - lensSize)) * 100;
+                            const percentY = (lensY / (height - lensSize)) * 100;
+
+                            setZoomPos({ x: lensX, y: lensY, percentX, percentY });
                         }}
                         onMouseEnter={() => setIsZoomed(true)}
                         onMouseLeave={() => setIsZoomed(false)}
@@ -202,11 +212,33 @@ function ProductDetailPage() {
                         <img
                             src={activeImage || product.image}
                             alt={product.name}
-                            className={`max-h-[500px] w-full object-contain transition-transform duration-200 ease-out ${isZoomed ? 'scale-[2.5]' : 'scale-100'}`}
-                            style={{
-                                transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
-                            }}
+                            className="max-h-full w-full object-contain transition-opacity duration-300"
                         />
+
+                        {isZoomed && (
+                            <>
+                                {/* Lens */}
+                                <div
+                                    className="absolute border border-gray-400 bg-white/30 pointer-events-none z-20"
+                                    style={{
+                                        width: '150px',
+                                        height: '150px',
+                                        left: `${zoomPos.x}px`,
+                                        top: `${zoomPos.y}px`,
+                                    }}
+                                />
+                                {/* External Zoom Panel */}
+                                <div
+                                    className="fixed top-24 left-[50%] ml-[20px] w-[600px] h-[600px] bg-white border border-gray-300 z-[100] shadow-2xl pointer-events-none overflow-hidden hidden lg:block"
+                                    style={{
+                                        backgroundImage: `url(${activeImage || product.image})`,
+                                        backgroundPosition: `${zoomPos.percentX}% ${zoomPos.percentY}%`,
+                                        backgroundSize: '200%',
+                                        backgroundRepeat: 'no-repeat'
+                                    }}
+                                />
+                            </>
+                        )}
 
                         {!isZoomed && (
                             <div className="absolute bottom-2 right-12 text-gray-400 text-[12px] opacity-0 group-hover:opacity-100 transition-opacity">
