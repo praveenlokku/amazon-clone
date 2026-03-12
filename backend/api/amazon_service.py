@@ -39,6 +39,64 @@ class AmazonService:
 
     @classmethod
     def search_products(cls, search_term, category_name=None):
+        """
+        Main entry point for product search. 
+        Prioritizes RapidAPI for reliability in production, falls back to scraping for local dev.
+        """
+        api_key = os.environ.get('RAPIDAPI_KEY')
+        api_host = os.environ.get('RAPIDAPI_HOST', 'real-time-amazon-data.p.rapidapi.com')
+
+        if api_key and api_key != 'YOUR_RAPIDAPI_KEY':
+            print(f"Using RapidAPI for search: {search_term}")
+            return cls._search_via_api(search_term, category_name)
+        
+        print(f"Falling back to scraping for search: {search_term}")
+        return cls._search_via_scraping(search_term, category_name)
+
+    @classmethod
+    def _search_via_api(cls, search_term, category_name=None):
+        api_key = os.environ.get('RAPIDAPI_KEY')
+        api_host = os.environ.get('RAPIDAPI_HOST', 'real-time-amazon-data.p.rapidapi.com')
+        
+        url = f"https://{api_host}/search"
+        querystring = {"query": search_term, "page": "1", "country": "IN", "sort_by": "RELEVANCE"}
+        
+        headers = {
+            "X-RapidAPI-Key": api_key,
+            "X-RapidAPI-Host": api_host
+        }
+
+        try:
+            response = requests.get(url, headers=headers, params=querystring, timeout=15)
+            if response.status_code == 200:
+                data = response.json()
+                products = data.get('data', {}).get('products', [])
+                
+                results = []
+                for p in products:
+                    if p.get('asin') and p.get('product_title'):
+                        results.append({
+                            'asin': p.get('asin'),
+                            'title': p.get('product_title'),
+                            'price': p.get('product_price', '0').replace('₹', '').replace(',', ''),
+                            'image': p.get('product_photo'),
+                            'stars': float(p.get('product_star_rating', 4.0)) if p.get('product_star_rating') else 4.0,
+                            'brand': p.get('brand', 'Amazon Vendor'),
+                            'description': p.get('product_title')
+                        })
+                
+                if results:
+                    return cls._map_and_save_results(results, category_name)
+            
+            print(f"RapidAPI failed with status {response.status_code}. Falling back to scraping.")
+            return cls._search_via_scraping(search_term, category_name)
+            
+        except Exception as e:
+            print(f"Error calling RapidAPI: {e}")
+            return cls._search_via_scraping(search_term, category_name)
+
+    @classmethod
+    def _search_via_scraping(cls, search_term, category_name=None):
         url = f"https://www.amazon.in/s?k={search_term.replace(' ', '+')}"
         
         try:
@@ -49,7 +107,7 @@ class AmazonService:
             if response.status_code == 503 or '<form action="/errors/validateCaptcha"' in response.text:
                 print("Amazon returned a CAPTCHA or 503 blocked the request.")
                 if search_term != 'bestsellers':
-                    return cls.search_products('bestsellers', category_name)
+                    return cls._search_via_scraping('bestsellers', category_name)
                 return []
                 
             soup = BeautifulSoup(response.content, 'lxml')
@@ -58,8 +116,7 @@ class AmazonService:
             if not items:
                 print("No search results found on the page or selector changed.")
                 if search_term != 'bestsellers':
-                    print(f"Falling back {search_term} block to bestsellers.")
-                    return cls.search_products('bestsellers', category_name)
+                    return cls._search_via_scraping('bestsellers', category_name)
                 return []
 
             results = []
@@ -73,7 +130,6 @@ class AmazonService:
                 
                 img_elem = item.find('img', {'class': 's-image'})
                 image = img_elem.get('src') if img_elem else ''
-                # Clean the image URL for search results too
                 image = cls.clean_amazon_url(image)
                 
                 rating_elem = item.find('span', {'class': 'a-icon-alt'})
@@ -96,7 +152,7 @@ class AmazonService:
 
             if not results:
                 if search_term != 'bestsellers':
-                    return cls.search_products('bestsellers', category_name)
+                    return cls._search_via_scraping('bestsellers', category_name)
                 return []
                 
             return cls._map_and_save_results(results, category_name)
@@ -104,7 +160,7 @@ class AmazonService:
         except Exception as e:
             print(f"Error scraping Amazon directly: {e}")
             if search_term != 'bestsellers':
-                return cls.search_products('bestsellers', category_name)
+                return cls._search_via_scraping('bestsellers', category_name)
             return []
 
     @classmethod
@@ -136,12 +192,76 @@ class AmazonService:
 
     @classmethod
     def fetch_full_product_info(cls, asin):
-        """Scrapes the actual product page for gallery and full details."""
+        """
+        Main entry point for fetching full product info (gallery, description).
+        Prioritizes RapidAPI for reliability in production, falls back to scraping.
+        """
+        api_key = os.environ.get('RAPIDAPI_KEY')
+        if api_key and api_key != 'YOUR_RAPIDAPI_KEY':
+            print(f"Using RapidAPI for product info: {asin}")
+            success = cls._fetch_info_via_api(asin)
+            if success: return
+        
+        print(f"Falling back to scraping for product info: {asin}")
+        cls._fetch_info_via_scraping(asin)
+
+    @classmethod
+    def _fetch_info_via_api(cls, asin):
+        api_key = os.environ.get('RAPIDAPI_KEY')
+        api_host = os.environ.get('RAPIDAPI_HOST', 'real-time-amazon-data.p.rapidapi.com')
+        
+        url = f"https://{api_host}/product-details"
+        querystring = {"asin": asin, "country": "IN"}
+        
+        headers = {
+            "X-RapidAPI-Key": api_key,
+            "X-RapidAPI-Host": api_host
+        }
+
+        try:
+            response = requests.get(url, headers=headers, params=querystring, timeout=15)
+            if response.status_code == 200:
+                data = response.json().get('data', {})
+                if not data: return False
+
+                # 1. Extract Images
+                images = []
+                # Main photo
+                if data.get('product_photo'):
+                    images.append(cls.clean_amazon_url(data['product_photo']))
+                
+                # Additional photos
+                for p in data.get('product_photos', []):
+                    cleaned = cls.clean_amazon_url(p)
+                    if cleaned not in images:
+                        images.append(cleaned)
+
+                # 2. Description
+                description = data.get('product_description', '')
+                if not description and data.get('about_product'):
+                    description = "\n".join(data['about_product'])
+
+                # 3. Update DB
+                if images:
+                    import json
+                    Product.objects.filter(asin=asin).update(
+                        additional_images=json.dumps(images),
+                        image=images[0],
+                        description=description or Product.objects.get(asin=asin).description
+                    )
+                    return True
+            return False
+        except Exception as e:
+            print(f"Error calling RapidAPI for details: {e}")
+            return False
+
+    @classmethod
+    def _fetch_info_via_scraping(cls, asin):
         if not asin: return
         
         url = f"https://www.amazon.in/dp/{asin}"
         try:
-            time.sleep(random.uniform(1.5, 3)) # Slightly longer delay
+            time.sleep(random.uniform(1.5, 3))
             response = requests.get(url, headers=cls.HEADERS, timeout=15)
             if response.status_code != 200:
                 print(f"Failed to fetch product page for {asin}: {response.status_code}")
@@ -151,27 +271,18 @@ class AmazonService:
             
             # 1. Extract Images Gallery
             images = []
-            
-            # Primary strategy: look for colorImages in script tags
             scripts = soup.find_all('script', type='text/javascript')
             for script in scripts:
                 if script.string and 'colorImages' in script.string:
                     import re
                     import json
-                    # Refine regex to be more robust
-                    # Look for "colorImages": { ... } or 'colorImages': { ... }
                     match = re.search(r'["\']colorImages["\']:\s*({.*?}),\s*["\']columnLayout["\']', script.string, re.DOTALL)
                     if match:
                         try:
-                            # Amazon's JSON might have single quotes and other non-standard things
                             json_str = match.group(1).replace("'", '"')
-                            # Basic cleanup for escaping
                             data = json.loads(json_str)
-                            
-                            # Standard layout is { 'initial': [ {hiRes:..., large:..., ...}, ... ] }
                             initial_images = data.get('initial', [])
                             for img_obj in initial_images:
-                                # Prioritize hiRes, then large
                                 hi_res = img_obj.get('hiRes') or img_obj.get('large') or img_obj.get('main', {}).get('url')
                                 if hi_res and isinstance(hi_res, str) and hi_res.startswith('http'):
                                     cleaned = cls.clean_amazon_url(hi_res)
@@ -181,25 +292,20 @@ class AmazonService:
                             print(f"Error parsing colorImages JSON for {asin}: {e}")
                     break
             
-            # Secondary strategy: altImages thumbnails (only if primary failed)
             if not images:
-                # Look for the thumbnail list
                 thumb_container = soup.select_one('#altImages') or soup.select_one('#imageBlock')
                 if thumb_container:
                     thumbs = thumb_container.select('img')
                     for thumb in thumbs:
                         src = thumb.get('src')
-                        # Filter out very small images or icons
                         if src and 'm.media-amazon.com/images/I/' in src:
-                            # Don't pick up common UI icons
                             if any(x in src.lower() for x in ['play-icon', 'video-icon', 'sprite']):
                                 continue
-                            
                             cleaned = cls.clean_amazon_url(src)
                             if cleaned not in images:
                                 images.append(cleaned)
 
-            # 2. Extract Description (optional enhancement)
+            # 2. Extract Description
             desc_elem = soup.select_one('#feature-bullets')
             description = ""
             if desc_elem:
@@ -209,10 +315,6 @@ class AmazonService:
             # 3. Update DB
             if images:
                 import json
-                # Filter out obvious duplicates or very small images by URL check if possible
-                # But clean_amazon_url usually handles the 'hi-res' part
-                
-                # Update only if we found actual product images (at least 1)
                 Product.objects.filter(asin=asin).update(
                     additional_images=json.dumps(images),
                     image=images[0] if images else None,

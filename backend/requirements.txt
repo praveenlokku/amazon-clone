@@ -6,3 +6,5 @@ requests
 python-dotenv
 gunicorn
 whitenoise
+beautifulsoup4
+lxml
