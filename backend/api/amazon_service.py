@@ -58,15 +58,16 @@ class AmazonService:
         api_key = os.environ.get('RAPIDAPI_KEY')
         api_host = os.environ.get('RAPIDAPI_HOST', 'real-time-amazon-data.p.rapidapi.com')
         
-        url = f"https://{api_host}/search"
+        url = f"https://{api_host.strip('/')}/search"
         querystring = {"query": search_term, "page": "1", "country": "IN", "sort_by": "RELEVANCE"}
         
         headers = {
             "X-RapidAPI-Key": api_key,
-            "X-RapidAPI-Host": api_host
+            "X-RapidAPI-Host": api_host.strip('/')
         }
 
         try:
+            print(f"Calling RapidAPI: {url}")
             response = requests.get(url, headers=headers, params=querystring, timeout=15)
             if response.status_code == 200:
                 data = response.json()
@@ -108,6 +109,7 @@ class AmazonService:
                 print("Amazon returned a CAPTCHA or 503 blocked the request.")
                 if search_term != 'bestsellers':
                     return cls._search_via_scraping('bestsellers', category_name)
+                # If even bestsellers fails, return empty list (we'll handle fallback in search_products)
                 return []
                 
             soup = BeautifulSoup(response.content, 'lxml')
