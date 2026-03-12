@@ -66,33 +66,43 @@ class AmazonService:
     @classmethod
     def _search_via_api(cls, search_term, category_name=None):
         api_key = os.environ.get('RAPIDAPI_KEY')
-        api_host = os.environ.get('RAPIDAPI_HOST', 'real-time-amazon-data.p.rapidapi.com')
-        api_endpoint = os.environ.get('RAPIDAPI_ENDPOINT')
+        primary_host = os.environ.get('RAPIDAPI_HOST', 'real-time-amazon-data.p.rapidapi.com').strip('/')
+        fallback_host = 'real-time-amazon-data.p.rapidapi.com'
         
+        api_endpoint = os.environ.get('RAPIDAPI_ENDPOINT')
         if not api_endpoint:
-            if 'amazon-data-scraper110' in api_host:
-                api_endpoint = 'search'  # Keeping current value as it was reported as 404 though
-            else:
-                api_endpoint = 'search'
+            api_endpoint = 'search'
         
         api_endpoint = api_endpoint.strip('/')
-        url = f"https://{api_host.strip('/')}/{api_endpoint}"
-
-        headers = {
-            "X-RapidAPI-Key": api_key,
-            "X-RapidAPI-Host": api_host.strip('/')
-        }
         
-        # Determine the correct parameter names based on common API standards
-        if 'real-time-amazon-data' in api_host:
-            querystring = {"q": search_term, "page": "1", "country": "IN", "sort_by": "RELEVANCE"}
-        else:
-            querystring = {"query": search_term, "page": "1", "country": "IN", "sort_by": "RELEVANCE"}
+        def try_request(host, endpoint):
+            url = f"https://{host}/{endpoint}"
+            headers = {
+                "X-RapidAPI-Key": api_key,
+                "X-RapidAPI-Host": host
+            }
+            # Standard host usually uses 'q', custom ones might use 'query'
+            param_key = 'q' if 'real-time-amazon-data' in host else 'query'
+            querystring = {param_key: search_term, "page": "1", "country": "IN", "sort_by": "RELEVANCE"}
+            
+            try:
+                print(f"Calling RapidAPI: {url}")
+                response = requests.get(url, headers=headers, params=querystring, timeout=10)
+                return response
+            except Exception as e:
+                print(f"Error calling {url}: {e}")
+                return None
+
+        # 1. Try Primary Host
+        response = try_request(primary_host, api_endpoint)
+        
+        # 2. If 404 and primary wasn't already the fallback, try the fallback host
+        if response and response.status_code == 404 and primary_host != fallback_host:
+            print(f"Primary host {primary_host} returned 404. Trying fallback host {fallback_host}...")
+            response = try_request(fallback_host, 'search')
 
         try:
-            print(f"Calling RapidAPI: {url}")
-            response = requests.get(url, headers=headers, params=querystring, timeout=15)
-            if response.status_code == 200:
+            if response and response.status_code == 200:
                 data = response.json()
                 products = data.get('data', {}).get('products', [])
                 
@@ -233,19 +243,33 @@ class AmazonService:
     @classmethod
     def _fetch_info_via_api(cls, asin):
         api_key = os.environ.get('RAPIDAPI_KEY')
-        api_host = os.environ.get('RAPIDAPI_HOST', 'real-time-amazon-data.p.rapidapi.com')
+        primary_host = os.environ.get('RAPIDAPI_HOST', 'real-time-amazon-data.p.rapidapi.com').strip('/')
+        fallback_host = 'real-time-amazon-data.p.rapidapi.com'
         
-        url = f"https://{api_host}/product-details"
-        querystring = {"asin": asin, "country": "IN"}
+        def try_details(host):
+            url = f"https://{host}/product-details"
+            querystring = {"asin": asin, "country": "IN"}
+            headers = {
+                "X-RapidAPI-Key": api_key,
+                "X-RapidAPI-Host": host
+            }
+            try:
+                print(f"Calling RapidAPI Details: {url}")
+                return requests.get(url, headers=headers, params=querystring, timeout=10)
+            except Exception as e:
+                print(f"Error calling details {url}: {e}")
+                return None
+
+        # 1. Try Primary
+        response = try_details(primary_host)
         
-        headers = {
-            "X-RapidAPI-Key": api_key,
-            "X-RapidAPI-Host": api_host
-        }
+        # 2. Fallback if 404
+        if response and response.status_code == 404 and primary_host != fallback_host:
+            print(f"Primary details host {primary_host} returned 404. Trying fallback...")
+            response = try_details(fallback_host)
 
         try:
-            response = requests.get(url, headers=headers, params=querystring, timeout=15)
-            if response.status_code == 200:
+            if response and response.status_code == 200:
                 data = response.json().get('data', {})
                 if not data: return False
 
