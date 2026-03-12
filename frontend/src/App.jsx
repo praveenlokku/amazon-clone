@@ -8,6 +8,7 @@ import ConfirmationPage from './pages/ConfirmationPage';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import OrdersPage from './pages/OrdersPage';
+import OrderDetailsPage from './pages/OrderDetailsPage';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
@@ -29,6 +30,7 @@ function AppContent() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/orders/:id" element={<OrderDetailsPage />} />
       </Routes>
       {!hideHeader && <Footer />}
     </div>
