@@ -4,6 +4,7 @@ import { useStateValue } from '../StateProvider.jsx';
 import axios from 'axios';
 import { countryCodes } from '../utils/countryCodes.js';
 import { API_BASE_URL } from '../utils/api.js';
+import AuthFooter from '../components/AuthFooter.jsx';
 
 function Login() {
     const navigate = useNavigate();
@@ -271,14 +272,7 @@ function Login() {
 
             {/* Step 3 (OTP Verification) removed as requested */}
 
-            <div className={`border-t border-[#e7e7e7] w-full flex flex-col items-center pt-8 bg-gradient-to-t from-white to-[#fafafa] flex-grow ${step === 2 ? 'mt-8' : 'mt-0'}`}>
-                <div className="flex space-x-7 text-[11px] text-[#0066c0]">
-                    <span className="hover:text-[#c45500] hover:underline cursor-pointer">Conditions of Use</span>
-                    <span className="hover:text-[#c45500] hover:underline cursor-pointer">Privacy Notice</span>
-                    <span className="hover:text-[#c45500] hover:underline cursor-pointer">Help</span>
-                </div>
-                <p className="text-[11px] text-[#555] mt-3 mb-10">© 1996-2026, Amazon.com, Inc. or its affiliates</p>
-            </div>
+            <AuthFooter />
         </div>
     );
 }
