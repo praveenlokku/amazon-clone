@@ -35,9 +35,9 @@ if os.path.exists(env_path):
 SECRET_KEY = 'django-insecure-l4juozdee3)i(n#b5sx-ir!)9**)vr(=391pm&ngnh_!9wir_6'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['*'] # In production, you should list your Railway domain here
+ALLOWED_HOSTS = ['*', 'amazon-clone-production-5dc7.up.railway.app'] 
 
 
 # Application definition
@@ -112,7 +112,14 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True # For development
+CORS_ALLOW_ALL_ORIGINS = True # For flexibility with multiple origins (Vercel, local)
+
+# Optional: Add specific origins if you want to be more restrictive
+# CORS_ALLOWED_ORIGINS = [
+#     "https://amazon-clone-omega-bay.vercel.app",
+#     "http://localhost:3000",
+#     "http://127.0.0.1:3000",
+# ]
 
 ROOT_URLCONF = 'core.urls'
 
