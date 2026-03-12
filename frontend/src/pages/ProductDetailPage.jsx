@@ -243,7 +243,7 @@ function ProductDetailPage() {
                                         />
                                     ))}
                                 </div>
-                                <span className="font-bold text-[18px]">{(product.rating || 0).toFixed(1)} out of 5</span>
+                                <span className="font-bold text-[18px]">{(Number(product.rating) || 0).toFixed(1)} out of 5</span>
                             </div>
                             <p className="text-gray-500 text-[14px]">{product.numReviews} global ratings</p>
                         </div>

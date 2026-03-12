@@ -10,6 +10,7 @@ import Signup from './pages/Signup';
 import OrdersPage from './pages/OrdersPage';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
 import './index.css';
 
 function AppContent() {
@@ -37,6 +38,7 @@ function AppContent() {
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <AppContent />
     </Router>
   );
