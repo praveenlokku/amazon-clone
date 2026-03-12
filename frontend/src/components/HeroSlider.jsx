@@ -3,10 +3,10 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const sliderImages = [
     "https://m.media-amazon.com/images/I/61G+G9-vAUL._SX3000_.jpg",
-    "https://m.media-amazon.com/images/I/71Ie3JXGfAL._SX3000_.jpg",
-    "https://m.media-amazon.com/images/I/71U-Q+N7PXL._SX3000_.jpg",
+    "https://m.media-amazon.com/images/I/61zAjw4bqPL._SX3000_.jpg",
     "https://m.media-amazon.com/images/I/81KkrQWEHIL._SX3000_.jpg",
-    "https://m.media-amazon.com/images/I/61zAjw4bqPL._SX3000_.jpg"
+    "https://m.media-amazon.com/images/I/71U-Q+N7PXL._SX3000_.jpg",
+    "https://m.media-amazon.com/images/I/61Pca7f3SfL._SX3000_.jpg"
 ];
 
 function HeroSlider() {

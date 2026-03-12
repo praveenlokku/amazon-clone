@@ -21,6 +21,11 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
     countInStock = models.IntegerField(null=True, blank=True, default=0)
     asin = models.CharField(max_length=20, null=True, blank=True, unique=True)
+    additional_images = models.TextField(null=True, blank=True, default="[]")  # JSON string
+    specifications = models.TextField(null=True, blank=True, default="{}")  # JSON string
+    variants = models.TextField(null=True, blank=True, default="[]")  # JSON string
+    isDeal = models.BooleanField(default=False)
+    discountPercentage = models.IntegerField(null=True, blank=True, default=0)
     createdAt = models.DateTimeField(auto_now_add=True)
     _id = models.AutoField(primary_key=True, editable=False)
 

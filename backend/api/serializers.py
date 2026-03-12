@@ -15,6 +15,9 @@ class ReviewSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     reviews = serializers.SerializerMethodField(read_only=True)
+    additional_images = serializers.SerializerMethodField(read_only=True)
+    specifications = serializers.SerializerMethodField(read_only=True)
+    variants = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Product
@@ -24,6 +27,27 @@ class ProductSerializer(serializers.ModelSerializer):
         reviews = obj.reviews.all()
         serializer = ReviewSerializer(reviews, many=True)
         return serializer.data
+
+    def get_additional_images(self, obj):
+        import json
+        try:
+            return json.loads(obj.additional_images or '[]')
+        except:
+            return []
+
+    def get_specifications(self, obj):
+        import json
+        try:
+            return json.loads(obj.specifications or '{}')
+        except:
+            return {}
+
+    def get_variants(self, obj):
+        import json
+        try:
+            return json.loads(obj.variants or '[]')
+        except:
+            return []
 
 class ShippingAddressSerializer(serializers.ModelSerializer):
     class Meta:

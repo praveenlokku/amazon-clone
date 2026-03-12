@@ -128,7 +128,10 @@ class AmazonService:
                     'brand': item.get('brand', 'Amazon'),
                     'category': category,
                     'countInStock': random.randint(5, 50),
-                    'description': item.get('description') or item.get('title')
+                    'description': item.get('description') or item.get('title'),
+                    # For real Amazon items, we'll try to guess some variant images or just keep it empty for now
+                    # Real scraping of gallery images usually requires a separate request to the product page
+                    'additional_images': item.get('additional_images', '[]')
                 }
             )
             mapped.append(cls._serialize_product(product))
@@ -137,11 +140,32 @@ class AmazonService:
     @staticmethod
     def _serialize_product(product):
         """Converts a Product model instance to a dictionary for API response."""
+        import json
+        try:
+            additional_images = json.loads(product.additional_images or '[]')
+        except:
+            additional_images = []
+
+        try:
+            specifications = json.loads(product.specifications or '{}')
+        except:
+            specifications = {}
+
+        try:
+            variants = json.loads(product.variants or '[]')
+        except:
+            variants = []
+
         return {
             '_id': product._id,
             'asin': product.asin,
             'name': product.name,
             'image': product.image,
+            'additional_images': additional_images,
+            'specifications': specifications,
+            'variants': variants,
+            'isDeal': product.isDeal,
+            'discountPercentage': product.discountPercentage,
             'price': float(product.price) if product.price else 0,
             'rating': float(product.rating) if product.rating else 0,
             'countInStock': product.countInStock,

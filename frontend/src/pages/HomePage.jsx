@@ -178,22 +178,24 @@ function HomePage() {
                     </div>
                 ) : (
                     <div>
-                        <div className="grid grid-flow-row-dense md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-10">
+                        <div className={`grid ${isSearching ? 'grid-cols-1' : 'grid-flow-row-dense md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'} gap-4 pb-10`}>
                             {(filteredProducts || []).length > 0 ? (
                                 (() => {
                                     const totalPages = Math.ceil((filteredProducts || []).length / itemsPerPage);
                                     const startIndex = (currentPage - 1) * itemsPerPage;
                                     const currentItems = (filteredProducts || []).slice(startIndex, startIndex + itemsPerPage);
                                     return currentItems.map((product) => (
-                                        <ProductCard
-                                            key={product._id}
-                                            id={product._id}
-                                            title={product.name}
-                                            price={product.price}
-                                            rating={product.rating}
-                                            image={product.image}
-                                            category={product.category?.name}
-                                        />
+                                        <div key={product._id} className={isSearching ? "border-b border-gray-200 pb-4" : ""}>
+                                            <ProductCard
+                                                id={product._id}
+                                                title={product.name}
+                                                price={product.price}
+                                                rating={product.rating}
+                                                image={product.image}
+                                                category={product.category?.name}
+                                                horizontal={isSearching}
+                                            />
+                                        </div>
                                     ));
                                 })()
                             ) : (
