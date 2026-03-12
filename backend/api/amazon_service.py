@@ -56,6 +56,7 @@ class AmazonService:
     @classmethod
     def _search_via_api(cls, search_term, category_name=None):
         api_key = os.environ.get('RAPIDAPI_KEY')
+        api_host = os.environ.get('RAPIDAPI_HOST', 'real-time-amazon-data.p.rapidapi.com')
         api_endpoint = os.environ.get('RAPIDAPI_ENDPOINT', 'search').strip('/')
         url = f"https://{api_host.strip('/')}/{api_endpoint}"
         querystring = {"query": search_term, "page": "1", "country": "IN", "sort_by": "RELEVANCE"}
