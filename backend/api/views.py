@@ -6,13 +6,16 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
-from .models import Product, Order, OrderItem, ShippingAddress, Category, Review
+from .models import Product, Order, OrderItem, ShippingAddress, Category, Review, OTP
 from .serializers import (
     ProductSerializer, OrderSerializer, CategorySerializer, 
     UserSerializer, UserSerializerWithToken
 )
 from .amazon_service import AmazonService
 from django.db.models import Q
+import random
+import resend
+import os
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
@@ -136,6 +139,68 @@ def registerUser(request):
     except:
         message = {'detail': 'User with this email already exists'}
         return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+resend.api_key = os.getenv('RESEND_API_KEY')
+
+@api_view(['POST'])
+def send_otp(request):
+    data = request.data
+    email = data.get('email')
+
+    if not email:
+        return Response({'detail': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(email=email)
+        
+        # Generate 6 digit OTP
+        otp_code = str(random.randint(100000, 999999))
+        
+        # Create OTP record
+        OTP.objects.create(user=user, code=otp_code)
+        
+        # Send Email
+        params = {
+            "from": "Acme <onboarding@resend.dev>",
+            "to": [email],
+            "subject": "Your Amazon Clone OTP",
+            "html": f"<strong>Your one-time password is: {otp_code}</strong>",
+        }
+        resend.Emails.send(params)
+
+        return Response({'detail': 'OTP sent successfully to email'})
+
+    except User.DoesNotExist:
+        return Response({'detail': 'User with this email does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        print(f"Error sending OTP: {e}")
+        return Response({'detail': 'Failed to send OTP'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def verify_otp(request):
+    data = request.data
+    email = data.get('email')
+    code = data.get('code')
+
+    if not email or not code:
+        return Response({'detail': 'Email and code are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(email=email)
+        otp = OTP.objects.filter(user=user, code=code, is_used=False).order_by('-created_at').first()
+
+        if otp:
+            otp.is_used = True
+            otp.save()
+            
+            # Login the user
+            serializer = UserSerializerWithToken(user, many=False)
+            return Response(serializer.data)
+        else:
+            return Response({'detail': 'Invalid or expired OTP'}, status=status.HTTP_400_BAD_REQUEST)
+
+    except User.DoesNotExist:
+        return Response({'detail': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

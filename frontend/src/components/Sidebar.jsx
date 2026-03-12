@@ -43,23 +43,23 @@ function Sidebar({ isOpen, onClose }) {
                         className="fixed top-0 left-0 bottom-0 w-[80%] max-w-[365px] bg-white z-[101] overflow-y-auto"
                     >
                         {/* Header */}
-                        <div className="bg-amazon-blue p-4 flex items-center space-x-3 text-white sticky top-0 z-10">
-                            <div className="bg-white rounded-full p-1">
-                                <User className="text-amazon-blue h-6 w-6" />
+                        <div className="bg-[#232f3e] p-[10px_10px_10px_35px] flex items-center space-x-[10px] text-white">
+                            <div className="bg-white rounded-full p-0.5 mt-[-1px]">
+                                <User className="text-[#232f3e] h-6 w-6" />
                             </div>
-                            <span className="font-bold text-lg">Hello, {user ? user.name : 'sign in'}</span>
+                            <span className="font-bold text-[19px] tracking-[-0.5px]">Hello, {user ? user.name : 'sign in'}</span>
                         </div>
 
                         {/* Menu Content */}
-                        <div className="flex flex-col py-2">
+                        <div className="flex flex-col py-2 mb-[50px]">
                             {menuItems.map((section, idx) => (
-                                <div key={idx} className="border-b border-gray-200 py-4 px-8 last:border-0">
-                                    <h3 className="font-bold text-[18px] mb-3">{section.title}</h3>
-                                    <ul className="space-y-4">
+                                <div key={idx} className="border-b border-[#d5d9d9] py-[13px] last:border-0 relative">
+                                    <h3 className="font-bold text-[18px] mb-[5px] px-9 text-[#111]">{section.title}</h3>
+                                    <ul className="space-y-[0px]">
                                         {section.items.map((item, i) => (
-                                            <li key={i} className="flex items-center justify-between text-gray-700 hover:bg-gray-100 -mx-8 px-8 py-2 cursor-pointer transition-colors text-[14px]">
+                                            <li key={i} className="flex items-center justify-between text-[#111] hover:bg-[#eaeded] px-9 py-[13px] cursor-pointer transition-colors text-[14px]">
                                                 {item}
-                                                <ChevronRight className="h-4 text-gray-400" />
+                                                <ChevronRight className="h-[20px] text-[#888]" />
                                             </li>
                                         ))}
                                     </ul>
@@ -67,17 +67,17 @@ function Sidebar({ isOpen, onClose }) {
                             ))}
 
                             {user && (
-                                <div className="border-t border-gray-200 py-4 px-8 mt-2">
-                                    <h3 className="font-bold text-[18px] mb-3">Help & Settings</h3>
-                                    <ul className="space-y-4">
-                                        <li className="text-gray-700 hover:bg-gray-100 -mx-8 px-8 py-2 cursor-pointer transition-colors text-[14px]">Your Account</li>
-                                        <li className="text-gray-700 hover:bg-gray-100 -mx-8 px-8 py-2 cursor-pointer transition-colors text-[14px]">Customer Service</li>
+                                <div className="border-t border-[#d5d9d9] py-[13px] relative">
+                                    <h3 className="font-bold text-[18px] mb-[5px] px-9 text-[#111]">Help & Settings</h3>
+                                    <ul className="space-y-[0px]">
+                                        <li className="text-[#111] hover:bg-[#eaeded] px-9 py-[13px] cursor-pointer transition-colors text-[14px]">Your Account</li>
+                                        <li className="text-[#111] hover:bg-[#eaeded] px-9 py-[13px] cursor-pointer transition-colors text-[14px]">Customer Service</li>
                                         <li
                                             onClick={() => {
                                                 localStorage.removeItem('user');
                                                 window.location.reload();
                                             }}
-                                            className="text-gray-700 hover:bg-gray-100 -mx-8 px-8 py-2 cursor-pointer transition-colors text-[14px] font-medium"
+                                            className="text-[#111] hover:bg-[#eaeded] px-9 py-[13px] cursor-pointer transition-colors text-[14px]"
                                         >
                                             Sign Out
                                         </li>
@@ -85,15 +85,15 @@ function Sidebar({ isOpen, onClose }) {
                                 </div>
                             )}
                         </div>
-
-                        {/* Close Button */}
-                        <div
-                            onClick={onClose}
-                            className="absolute top-4 -right-12 cursor-pointer text-white hover:text-gray-300 transition-colors"
-                        >
-                            <X className="h-8 w-8" />
-                        </div>
                     </motion.div>
+
+                    {/* Close Button placed outside relative to wrapper */}
+                    <div
+                        onClick={onClose}
+                        className="fixed top-4 left-[380px] z-[110] cursor-pointer text-white hover:text-gray-200 transition-colors drop-shadow-md"
+                    >
+                        <X className="h-9 w-9" strokeWidth={1.5} />
+                    </div>
                 </>
             )}
         </AnimatePresence>

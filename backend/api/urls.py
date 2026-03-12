@@ -4,7 +4,7 @@ from .views import (
     ProductViewSet, CategoryViewSet, addOrderItems, getOrderById, 
     searchRealProducts, getRealProductDetails,
     MyTokenObtainPairView, registerUser, getUserProfile, getMyOrders,
-    createProductReview
+    createProductReview, send_otp, verify_otp
 )
 
 router = DefaultRouter()
@@ -18,6 +18,8 @@ urlpatterns = [
     path('users/login/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('users/register/', registerUser, name='register'),
     path('users/profile/', getUserProfile, name='user-profile'),
+    path('users/send-otp/', send_otp, name='send-otp'),
+    path('users/verify-otp/', verify_otp, name='verify-otp'),
 
     path('amazon/search/', searchRealProducts, name='amazon-search'),
     path('amazon/product/<str:asin>/', getRealProductDetails, name='amazon-product'),

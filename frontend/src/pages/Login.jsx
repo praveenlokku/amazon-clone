@@ -9,9 +9,12 @@ function Login() {
     const [step, setStep] = useState(1);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [otpCode, setOtpCode] = useState('');
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [selectedCountry, setSelectedCountry] = useState({ code: 'IN', dial: '+91' });
     const [, dispatch] = useStateValue();
+    const [isOtpFlow, setIsOtpFlow] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const handleContinue = (e) => {
         e.preventDefault();
@@ -19,6 +22,55 @@ function Login() {
             setStep(2);
         } else {
             alert("Please enter a valid mobile number or email.");
+        }
+    };
+
+    const requestOtp = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            const config = { headers: { 'Content-Type': 'application/json' } };
+            await axios.post(
+                'http://localhost:8000/api/users/send-otp/',
+                { 'email': email },
+                config
+            );
+            setIsOtpFlow(true);
+            setStep(3); // Go to OTP entry step
+        } catch (error) {
+            alert(error.response?.data?.detail || "Failed to send OTP. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const verifyOtp = async (e) => {
+        e.preventDefault();
+        if (otpCode.length < 6) {
+            alert("Please enter a valid 6-digit OTP.");
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const config = { headers: { 'Content-Type': 'application/json' } };
+            const { data } = await axios.post(
+                'http://localhost:8000/api/users/verify-otp/',
+                { 'email': email, 'code': otpCode },
+                config
+            );
+
+            dispatch({
+                type: 'SET_USER',
+                user: data
+            });
+
+            localStorage.setItem('user', JSON.stringify(data));
+            navigate('/');
+        } catch (error) {
+            alert(error.response?.data?.detail || "Invalid or expired OTP.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -223,9 +275,56 @@ function Login() {
                         Sign in with a passkey
                     </button>
 
-                    <button className="w-full bg-white hover:bg-[#f7f8fa] border border-[#d5d9d9] py-[5px] shadow-[0_2px_5px_rgba(213,217,217,0.5)] text-[13px] rounded-[8px] transition-colors font-normal mt-3">
-                        Get an OTP on your phone
+                    <button
+                        className="w-full bg-white hover:bg-[#f7f8fa] border border-[#d5d9d9] py-[5px] shadow-[0_2px_5px_rgba(213,217,217,0.5)] text-[13px] rounded-[8px] transition-colors font-normal mt-3"
+                        onClick={requestOtp}
+                        disabled={loading}
+                    >
+                        {loading ? 'Sending...' : 'Get an OTP on your email'}
                     </button>
+                </div>
+            )}
+
+            {step === 3 && (
+                <div className="w-[350px] border border-[#ddd] rounded-[8px] p-[26px] pb-[22px] flex flex-col z-10">
+                    <h1 className="text-[28px] font-normal mb-2 leading-[1.2]">Verification required</h1>
+
+                    <p className="text-[13px] mb-4">
+                        To continue, complete this verification step. We've sent an OTP to the email <span className="font-bold">{email}</span>. Please enter it below.
+                    </p>
+
+                    <form className="space-y-[14px]" onSubmit={verifyOtp}>
+                        <div>
+                            <div className="flex justify-between items-baseline mb-[2px]">
+                                <label className="block text-[13px] font-bold">Enter OTP</label>
+                            </div>
+                            <input
+                                type="text"
+                                maxLength="6"
+                                className="w-full border border-[#a6a6a6] p-[6px] px-2 rounded-[3px] outline-none focus:border-[#007185] focus:shadow-[0_0_0_3px_#c8f3fa,inset_0_1px_2px_rgba(15,11,17,.15)] shadow-[0_1px_2px_rgba(0,0,0,0.2)_inset] tracking-widest text-center"
+                                value={otpCode}
+                                onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                                autoFocus
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            className="w-full py-[5px] text-[13px] font-normal rounded-[8px] hover:bg-[#F7CA00] bg-[#FFD814] border border-[#FCD200] shadow-[0_1px_2px_rgba(0,0,0,0.1)] transition-colors"
+                            disabled={loading}
+                        >
+                            {loading ? 'Verifying...' : 'Continue'}
+                        </button>
+                    </form>
+
+                    <div className="mt-4 text-center">
+                        <span
+                            className="text-[13px] text-[#0066c0] hover:text-[#c45500] hover:underline cursor-pointer"
+                            onClick={requestOtp}
+                        >
+                            Resend OTP
+                        </span>
+                    </div>
                 </div>
             )}
 
