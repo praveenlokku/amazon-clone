@@ -28,7 +28,7 @@ export const initialState = {
 };
 
 export const getCartTotal = (cart) =>
-    cart?.reduce((amount, item) => (item.price * item.qty) + amount, 0);
+    (cart || []).reduce((amount, item) => (Number(item.price || 0) * Number(item.qty || 1)) + amount, 0);
 
 export const reducer = (state, action) => {
     switch (action.type) {

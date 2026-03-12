@@ -69,7 +69,7 @@ function CheckoutPage() {
                     </div>
                 </Link>
                 <h1 className="text-2xl md:text-3xl font-normal text-[#111]">
-                    Checkout (<span className="text-[#007185] hover:text-[#c45500] hover:underline cursor-pointer">{cart?.length} items</span>)
+                    Checkout (<span className="text-[#007185] hover:text-[#c45500] hover:underline cursor-pointer">{(cart || []).length} items</span>)
                 </h1>
                 <Lock className="h-6 text-[#999]" />
             </div>
@@ -144,7 +144,7 @@ function CheckoutPage() {
                             Review items and delivery
                         </h2>
                         <div className="ml-8 space-y-4">
-                            {cart.map((item) => (
+                            {(cart || []).map((item) => (
                                 <div key={item.product} className="flex space-x-6 border border-gray-200 rounded-lg p-4">
                                     <img className="h-24 w-24 object-contain" src={item.image} alt={item.name} />
                                     <div className="flex-grow">

@@ -35,12 +35,12 @@ function ProductCard({ id, title, price, rating, image, category }) {
 
                 <div className="flex items-center space-x-1 mb-1">
                     <div className="flex">
-                        {Array(Math.floor(rating))
+                        {Array(Math.floor(rating || 0))
                             .fill()
                             .map((_, i) => (
                                 <Star key={i} className="h-4 w-4 text-[#ffa41c] fill-current" />
                             ))}
-                        {rating % 1 !== 0 && <Star className="h-4 w-4 text-[#ffa41c] fill-current" style={{ clipPath: 'inset(0 50% 0 0)' }} />}
+                        {(rating || 0) % 1 !== 0 && <Star className="h-4 w-4 text-[#ffa41c] fill-current" style={{ clipPath: 'inset(0 50% 0 0)' }} />}
                     </div>
                     <span className="text-blue-600 text-[12px] hover:underline hover:text-amazon-orange cursor-pointer">820</span>
                 </div>
@@ -48,10 +48,10 @@ function ProductCard({ id, title, price, rating, image, category }) {
                 <div className="flex items-center space-x-2 mb-2">
                     <div className="flex items-baseline">
                         <span className="text-[13px] self-start mt-1 mr-0.5">₹</span>
-                        <span className="text-2xl font-bold">{Math.floor(price)}</span>
-                        <span className="text-[13px] self-start mt-1 ml-0.5">{(price % 1).toFixed(2).substring(2) || '00'}</span>
+                        <span className="text-2xl font-bold">{Math.floor(price || 0)}</span>
+                        <span className="text-[13px] self-start mt-1 ml-0.5">{((price || 0) % 1).toFixed(2).substring(2) || '00'}</span>
                     </div>
-                    <p className="text-[12px] text-gray-500 line-through">₹{(price * 1.2).toFixed(0)}</p>
+                    <p className="text-[12px] text-gray-500 line-through">₹{((price || 0) * 1.2).toFixed(0)}</p>
                 </div>
 
                 <div className="flex items-center space-x-1 mb-4">

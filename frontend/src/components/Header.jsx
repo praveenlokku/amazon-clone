@@ -176,7 +176,7 @@ function Header() {
                             </div>
                         </Link>
 
-                        <Link to="/checkout" className="flex items-center cursor-pointer border border-transparent hover:border-white px-2 rounded-[1px] h-[50px] transition-all pt-1">
+                        <Link to="/cart" className="flex items-center cursor-pointer border border-transparent hover:border-white px-2 rounded-[1px] h-[50px] transition-all pt-1">
                             <div className="relative flex items-center">
                                 <ShoppingCart className="h-9 w-10 text-white stroke-[1.5px]" />
                                 <span className="absolute top-0 left-[19px] py-[2px] px-[6px] text-[#f08804] font-bold text-[15px] rounded-full">

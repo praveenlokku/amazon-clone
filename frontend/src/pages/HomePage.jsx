@@ -167,7 +167,7 @@ function HomePage() {
                 {isSearching && (
                     <div className="bg-white p-4 mb-4 shadow-sm rounded-sm border border-gray-200">
                         <h1 className="text-[18px] text-[#565959]">
-                            {filteredProducts.length} results for <span className="text-[#c45500] font-bold italic">"{query.get('s') || query.get('c')}"</span>
+                            {(filteredProducts || []).length} results for <span className="text-[#c45500] font-bold italic">"{query.get('s') || query.get('c')}"</span>
                         </h1>
                     </div>
                 )}
@@ -186,8 +186,8 @@ function HomePage() {
                     </div>
                 ) : (
                     <div className="grid grid-flow-row-dense md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-10">
-                        {filteredProducts.length > 0 ? (
-                            filteredProducts.map((product) => (
+                        {(filteredProducts || []).length > 0 ? (
+                            (filteredProducts || []).map((product) => (
                                 <ProductCard
                                     key={product._id}
                                     id={product._id}

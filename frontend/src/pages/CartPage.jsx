@@ -17,7 +17,7 @@ function CartPage() {
                         Shopping Cart
                     </h1>
 
-                    {cart?.length === 0 ? (
+                    {(!cart || cart.length === 0) ? (
                         <div className="py-10 text-center">
                             <h2 className="text-xl font-bold mb-4">Your Amazon Cart is empty.</h2>
                             <button
@@ -29,7 +29,7 @@ function CartPage() {
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {cart.map((item, i) => (
+                            {(cart || []).map((item, i) => (
                                 <CartItem
                                     key={i}
                                     id={item.product}
@@ -43,7 +43,7 @@ function CartPage() {
 
                             <div className="text-right pt-4 border-t border-gray-200">
                                 <p className="text-[18px] text-[#0f1111]">
-                                    Subtotal ({cart.reduce((amount, item) => item.qty + amount, 0)} items):
+                                    Subtotal ({(cart || []).reduce((amount, item) => item.qty + amount, 0)} items):
                                     <span className="font-bold ml-1">₹{getCartTotal(cart).toFixed(2)}</span>
                                 </p>
                             </div>
@@ -52,7 +52,7 @@ function CartPage() {
                 </div>
 
                 {/* Right Column: Subtotal Sidebar */}
-                {cart?.length > 0 && (
+                {(cart || []).length > 0 && (
                     <div className="flex flex-col bg-white p-6 h-fit min-w-[300px] shadow-sm border border-gray-200">
                         <div className="space-y-4">
                             <div className="flex items-start space-x-2 text-[#007600] text-[14px]">
@@ -68,7 +68,7 @@ function CartPage() {
                             </div>
 
                             <p className="text-[18px] text-[#0f1111]">
-                                Subtotal ({cart.reduce((amount, item) => item.qty + amount, 0)} items):
+                                Subtotal ({(cart || []).reduce((amount, item) => item.qty + amount, 0)} items):
                                 <span className="font-bold ml-1 text-[20px]">₹{getCartTotal(cart).toFixed(2)}</span>
                             </p>
 
@@ -89,7 +89,7 @@ function CartPage() {
             </main>
 
             {/* Recommended items placeholder */}
-            {cart?.length > 0 && (
+            {(cart || []).length > 0 && (
                 <div className="max-w-screen-2xl mx-auto px-4 mt-6">
                     <div className="bg-white p-6 shadow-sm border border-gray-200">
                         <h3 className="text-[18px] font-bold mb-4 text-[#0f1111]">Recommendations for you</h3>

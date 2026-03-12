@@ -1,40 +1,79 @@
 import requests
+from bs4 import BeautifulSoup
 import os
+import random
+import time
 from django.conf import settings
 from .models import Product, Category
 
 class AmazonService:
     """
-    Service to fetch real Amazon product data using Rainforest API or similar.
+    Service to fetch real Amazon product data by directly scraping Amazon.in.
     Includes a database caching mechanism to store results in our local DB.
     """
     
-    API_KEY = os.getenv('RAPIDAPI_KEY', '')
-    API_HOST = os.getenv('RAPIDAPI_HOST', 'amazon-data-scraper110.p.rapidapi.com')
+    HEADERS = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+    }
 
     @classmethod
     def search_products(cls, search_term, category_name=None):
-        if not cls.API_KEY:
-            print("Warning: No RAPIDAPI_KEY found. Using mock-real data.")
-            return cls._get_mock_real_data(search_term)
-
-        url = f"https://{cls.API_HOST}/search/{search_term}"
-        
-        headers = {
-            "x-rapidapi-host": cls.API_HOST,
-            "x-rapidapi-key": cls.API_KEY,
-            "Content-Type": "application/json"
-        }
+        url = f"https://www.amazon.in/s?k={search_term.replace(' ', '+')}"
         
         try:
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            data = response.json()
-            # The Amazon Data Scraper returns results usually inside a 'results' or similar key, or as a list
-            results = data.get('results', []) if isinstance(data, dict) else data
+            # Add small delay to prevent immediate bot detection
+            time.sleep(random.uniform(0.5, 1.5))
+            response = requests.get(url, headers=cls.HEADERS, timeout=10)
+            
+            if response.status_code == 503 or '<form action="/errors/validateCaptcha"' in response.text:
+                print("Amazon returned a CAPTCHA or 503 blocked the request. Using mock fallback.")
+                return cls._get_mock_real_data(search_term)
+                
+            soup = BeautifulSoup(response.content, 'lxml')
+            items = soup.find_all('div', {'data-component-type': 's-search-result'})
+            
+            if not items:
+                print("No search results found on the page or selector changed. Using mock fallback.")
+                return cls._get_mock_real_data(search_term)
+
+            results = []
+            for item in items[:48]:  # Get top 48 items
+                asin = item.get('data-asin')
+                title_elem = item.find('h2')
+                title = title_elem.text.strip() if title_elem else ''
+                
+                price_elem = item.find('span', {'class': 'a-price-whole'})
+                price = price_elem.text.strip().replace(',', '') if price_elem else '0'
+                
+                img_elem = item.find('img', {'class': 's-image'})
+                image = img_elem.get('src') if img_elem else ''
+                
+                rating_elem = item.find('span', {'class': 'a-icon-alt'})
+                rating_text = rating_elem.text if rating_elem else '4.0 out of 5 stars'
+                try:
+                    rating = float(rating_text.split(' ')[0])
+                except:
+                    rating = 4.0
+                
+                if asin and title and image:
+                    results.append({
+                        'asin': asin,
+                        'title': title,
+                        'price': price,
+                        'image': image,
+                        'stars': rating,
+                        'brand': 'Amazon Vendor',
+                        'description': title
+                    })
+
+            if not results:
+                return cls._get_mock_real_data(search_term)
+                
             return cls._map_and_save_results(results, category_name)
+            
         except Exception as e:
-            print(f"Error fetching from Amazon API: {e}")
+            print(f"Error scraping Amazon directly: {e}")
             return cls._get_mock_real_data(search_term)
 
     @classmethod
@@ -44,101 +83,47 @@ class AmazonService:
             product = Product.objects.get(asin=asin)
             return cls._serialize_product(product)
         except Product.DoesNotExist:
-            pass
-
-        if not cls.API_KEY:
-            return None
-
-        url = f"https://{cls.API_HOST}/product/{asin}"
-        
-        headers = {
-            "x-rapidapi-host": cls.API_HOST,
-            "x-rapidapi-key": cls.API_KEY,
-            "Content-Type": "application/json"
-        }
-
-        try:
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            data = response.json()
-            if data:
-                product_obj = cls._save_to_db(data)
-                return cls._serialize_product(product_obj)
-            return None
-        except Exception as e:
-            print(f"Error fetching product details: {e}")
             return None
 
     @classmethod
     def _map_and_save_results(cls, results, category_name):
-        """Maps external API response to our local Product schema and saves to DB."""
+        """Maps scraped data response to our local Product schema and saves to DB."""
         mapped = []
         category, _ = Category.objects.get_or_create(name=category_name or 'Real Amazon Item')
 
-        # Limit to 10 results to not overload DB in dev
-        for item in results[:10]:
+        for item in results:
             asin = item.get('asin')
             if not asin: continue
 
-            # Handle price string to float conversion mapping
-            price_val = 0
-            raw_price = item.get('price', '0')
-            if isinstance(raw_price, dict):
-                price_val = float(raw_price.get('value', 0) or 0)
-            elif isinstance(raw_price, str):
-                try:
-                    price_val = float(raw_price.replace('₹', '').replace('$', '').replace(',', '').strip() or 0)
-                except:
-                    price_val = 0
-            elif isinstance(raw_price, (int, float)):
-                price_val = float(raw_price)
+            raw_price = str(item.get('price', '0'))
+            try:
+                clean_price = ''.join(c for c in raw_price if c.isdigit() or c == '.')
+                # In case there are multiple dots or a trailing dot
+                clean_price = clean_price.rstrip('.')
+                price_val = float(clean_price) if clean_price else 0.0
+            except:
+                price_val = 0.0
+
+            # Filter out missing image links
+            img = item.get('image', '')
+            if not img.startswith('http'):
+                continue
 
             product, created = Product.objects.update_or_create(
                 asin=asin,
                 defaults={
                     'name': item.get('title')[:200] if item.get('title') else 'Unknown',
-                    'image': item.get('thumbnail') or item.get('image'),
+                    'image': img,
                     'price': price_val,
-                    'rating': item.get('stars', 0) or item.get('rating', 0),
+                    'rating': item.get('stars', 0),
                     'brand': item.get('brand', 'Amazon'),
                     'category': category,
-                    'countInStock': 10,
-                    'description': item.get('title')
+                    'countInStock': random.randint(5, 50),
+                    'description': item.get('description') or item.get('title')
                 }
             )
             mapped.append(cls._serialize_product(product))
         return mapped
-
-    @classmethod
-    def _save_to_db(cls, item):
-        category, _ = Category.objects.get_or_create(name='Real Amazon Item')
-        
-        price_val = 0
-        raw_price = item.get('price', '0')
-        if isinstance(raw_price, dict):
-            price_val = float(raw_price.get('value', 0) or 0)
-        elif isinstance(raw_price, str):
-            try:
-                price_val = float(raw_price.replace('₹', '').replace('$', '').replace(',', '').strip() or 0)
-            except:
-                price_val = 0
-        elif isinstance(raw_price, (int, float)):
-            price_val = float(raw_price)
-            
-        product, _ = Product.objects.update_or_create(
-            asin=item.get('asin'),
-            defaults={
-                'name': item.get('title')[:200] if item.get('title') else 'Unknown',
-                'image': item.get('main_image') or item.get('image'),
-                'price': price_val,
-                'rating': item.get('stars', 0) or item.get('rating', 0),
-                'brand': item.get('brand', 'Amazon'),
-                'category': category,
-                'countInStock': 10,
-                'description': item.get('description') or item.get('title')
-            }
-        )
-        return product
 
     @staticmethod
     def _serialize_product(product):
@@ -158,6 +143,7 @@ class AmazonService:
 
     @staticmethod
     def _get_mock_real_data(search_term):
+        print("Using standard fallback list with working images.")
         valid_images = [
             "https://m.media-amazon.com/images/I/41-lS7+xM4L._AC_SL1500_.jpg",
             "https://m.media-amazon.com/images/I/41uS8IovmHL._AC_SL1500_.jpg",
@@ -173,7 +159,7 @@ class AmazonService:
                 '_id': 9990 + i,
                 'asin': f"MOCK_{i}",
                 'name': f"Premium {search_term} - Variant {i}",
-                'image': valid_images[i - 1],
+                'image': valid_images[(i - 1) % len(valid_images)],
                 'price': 1299.00 + (i * 100),
                 'rating': 4.5,
                 'countInStock': 5,
