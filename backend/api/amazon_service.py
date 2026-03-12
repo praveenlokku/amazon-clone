@@ -13,18 +13,16 @@ class AmazonService:
     """
     
     HEADERS = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.9',
         'Accept-Encoding': 'gzip, deflate, br',
-        'DNT': '1',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
+        'Device-Memory': '8',
+        'Viewport-Width': '430',
         'Sec-Fetch-Dest': 'document',
         'Sec-Fetch-Mode': 'navigate',
         'Sec-Fetch-Site': 'none',
         'Sec-Fetch-User': '?1',
-        'Cache-Control': 'max-age=0',
     }
     
     @staticmethod
@@ -65,8 +63,9 @@ class AmazonService:
 
     @classmethod
     def _search_via_api(cls, search_term, category_name=None):
-        api_key = os.environ.get('RAPIDAPI_KEY')
-        primary_host = os.environ.get('RAPIDAPI_HOST', 'real-time-amazon-data.p.rapidapi.com').strip('/')
+        api_key = os.environ.get('RAPIDAPI_KEY', '').strip()
+        raw_host = os.environ.get('RAPIDAPI_HOST', 'real-time-amazon-data.p.rapidapi.com')
+        primary_host = raw_host.strip().strip('/')
         fallback_host = 'real-time-amazon-data.p.rapidapi.com'
         
         api_endpoint = os.environ.get('RAPIDAPI_ENDPOINT')
@@ -97,9 +96,14 @@ class AmazonService:
         response = try_request(primary_host, api_endpoint)
         
         # 2. If 404 and primary wasn't already the fallback, try the fallback host
-        if response and response.status_code == 404 and primary_host != fallback_host:
-            print(f"Primary host {primary_host} returned 404. Trying fallback host {fallback_host}...")
+        if response and response.status_code == 404 and fallback_host not in primary_host:
+            print(f"DEBUG: Host {primary_host} returned 404. Trying fallback host {fallback_host}...")
             response = try_request(fallback_host, 'search')
+            
+            # 3. If standard fallback /search also 404s, try v1 variation
+            if response and response.status_code == 404:
+                print(f"DEBUG: Fallback /search also 404. Trying /v1/products/search...")
+                response = try_request(fallback_host, 'v1/products/search')
 
         try:
             if response and response.status_code == 200:
