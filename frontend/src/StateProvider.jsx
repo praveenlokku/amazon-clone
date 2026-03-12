@@ -74,9 +74,23 @@ export const reducer = (state, action) => {
             };
 
         case 'SET_USER':
+            if (action.user) {
+                localStorage.setItem('user', JSON.stringify(action.user));
+            } else {
+                localStorage.removeItem('user');
+            }
             return {
                 ...state,
                 user: action.user,
+            };
+
+        case 'USER_LOGOUT':
+            localStorage.removeItem('user');
+            localStorage.removeItem('cart');
+            return {
+                ...state,
+                user: null,
+                cart: [],
             };
 
         case 'SET_LOCATION':

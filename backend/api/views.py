@@ -38,6 +38,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def addOrderItems(request):
     user = request.user
     data = request.data
@@ -49,7 +50,7 @@ def addOrderItems(request):
     else:
         # (1) Create order
         order = Order.objects.create(
-            user=user if user.is_authenticated else None,
+            user=user,
             paymentMethod=data['paymentMethod'],
             taxPrice=data['taxPrice'],
             shippingPrice=data['shippingPrice'],
@@ -65,22 +66,47 @@ def addOrderItems(request):
             country=data['shippingAddress']['country'],
         )
 
-        # (3) Create order items and set order to orderItem relationship
+        # (3) Create order items
         for i in orderItems:
-            product = Product.objects.get(_id=i['product'])
+            try:
+                # Try to get existing product by _id (if it's an integer) or ASIN
+                try:
+                    product_id = int(i['product'])
+                    product = Product.objects.get(_id=product_id)
+                except (ValueError, Product.DoesNotExist, TypeError):
+                    product = Product.objects.filter(asin=i['product']).first()
+                
+                # If still not found, create a placeholder product for this transaction
+                if not product:
+                    # Get or create a default category
+                    category, _ = Category.objects.get_or_create(name='Real Amazon Item')
+                    
+                    product = Product.objects.create(
+                        name=i['name'],
+                        price=i['price'],
+                        image=i['image'],
+                        asin=str(i['product'])[:20] if i['product'] else None,
+                        countInStock=100,
+                        category=category
+                    )
 
-            item = OrderItem.objects.create(
-                product=product,
-                order=order,
-                name=product.name,
-                qty=i['qty'],
-                price=i['price'],
-                image=product.image,
-            )
+                OrderItem.objects.create(
+                    product=product,
+                    order=order,
+                    name=product.name,
+                    qty=i['qty'],
+                    price=i['price'],
+                    image=product.image,
+                )
 
-            # (4) Update stock
-            product.countInStock -= item.qty
-            product.save()
+                # (4) Update stock
+                product.countInStock -= i['qty']
+                product.save()
+
+            except Exception as e:
+                print(f"Error processing order item {i}: {e}")
+                order.delete()
+                return Response({'detail': f'Error creating order item: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = OrderSerializer(order, many=False)
         return Response(serializer.data)

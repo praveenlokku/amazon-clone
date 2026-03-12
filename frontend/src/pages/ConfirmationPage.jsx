@@ -55,7 +55,7 @@ function ConfirmationPage() {
                         </button>
                     </Link>
                     <p className="text-[12px] text-[#565959]">
-                        You can view your order history in <span className="text-[#007185] hover:underline cursor-pointer">Your Account</span>.
+                        You can view your order history in <Link to="/orders" className="text-[#007185] hover:underline cursor-pointer">Your Orders</Link>.
                     </p>
                 </div>
             </div>

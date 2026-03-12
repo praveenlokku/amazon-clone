@@ -5,7 +5,7 @@ import { Lock } from 'lucide-react';
 import { useStateValue, getCartTotal } from '../StateProvider.jsx';
 
 function CheckoutPage() {
-    const [{ cart }, dispatch] = useStateValue();
+    const [{ cart, user }, dispatch] = useStateValue();
     const navigate = useNavigate();
 
     const [address, setAddress] = useState('');
@@ -42,12 +42,19 @@ function CheckoutPage() {
         };
 
         try {
-            const { data } = await axios.post('http://localhost:8000/api/orders/add/', orderData);
+            const config = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${user.token}`,
+                },
+            };
+
+            const { data } = await axios.post('http://localhost:8000/api/orders/add/', orderData, config);
             dispatch({ type: 'EMPTY_CART' });
             navigate(`/confirmation/${data._id}`);
         } catch (error) {
             console.error("Error placing order", error);
-            alert("Something went wrong. Please try again.");
+            alert(error.response?.data?.detail || "Something went wrong. Please try again.");
         }
     };
 

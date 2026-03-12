@@ -10,6 +10,8 @@ function HomePage() {
     const [products, setProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 12;
     const location = useLocation();
 
     useEffect(() => {
@@ -38,12 +40,14 @@ function HomePage() {
                     setProducts(data);
                     setFilteredProducts(data);
                 }
+                setCurrentPage(1);
                 setLoading(false);
             } catch (error) {
                 console.error("Error fetching products", error);
                 setLoading(false);
                 // Fallback for local testing if API fails or search is empty
                 setFilteredProducts([]);
+                setCurrentPage(1);
             }
         };
 
@@ -173,23 +177,61 @@ function HomePage() {
                         <p className="text-xl font-bold animate-pulse text-gray-500 italic">Finding best deals for you...</p>
                     </div>
                 ) : (
-                    <div className="grid grid-flow-row-dense md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-10">
-                        {(filteredProducts || []).length > 0 ? (
-                            (filteredProducts || []).map((product) => (
-                                <ProductCard
-                                    key={product._id}
-                                    id={product._id}
-                                    title={product.name}
-                                    price={product.price}
-                                    rating={product.rating}
-                                    image={product.image}
-                                    category={product.category?.name}
-                                />
-                            ))
-                        ) : (
-                            <div className="col-span-full py-20 text-center bg-white shadow-sm border border-gray-200 rounded-sm">
-                                <h2 className="text-2xl font-bold text-gray-800">No results found for your search.</h2>
-                                <p className="text-gray-500 mt-2">Try checking your spelling or use more general terms.</p>
+                    <div>
+                        <div className="grid grid-flow-row-dense md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-10">
+                            {(filteredProducts || []).length > 0 ? (
+                                (() => {
+                                    const totalPages = Math.ceil((filteredProducts || []).length / itemsPerPage);
+                                    const startIndex = (currentPage - 1) * itemsPerPage;
+                                    const currentItems = (filteredProducts || []).slice(startIndex, startIndex + itemsPerPage);
+                                    return currentItems.map((product) => (
+                                        <ProductCard
+                                            key={product._id}
+                                            id={product._id}
+                                            title={product.name}
+                                            price={product.price}
+                                            rating={product.rating}
+                                            image={product.image}
+                                            category={product.category?.name}
+                                        />
+                                    ));
+                                })()
+                            ) : (
+                                <div className="col-span-full py-20 text-center bg-white shadow-sm border border-gray-200 rounded-sm">
+                                    <h2 className="text-2xl font-bold text-gray-800">No results found for your search.</h2>
+                                    <p className="text-gray-500 mt-2">Try checking your spelling or use more general terms.</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Pagination Controls */}
+                        {filteredProducts && filteredProducts.length > itemsPerPage && (
+                            <div className="flex justify-center items-center space-x-2 mt-2 mb-12">
+                                <button
+                                    onClick={() => { setCurrentPage(prev => Math.max(prev - 1, 1)); window.scrollTo(0, 0); }}
+                                    disabled={currentPage === 1}
+                                    className={`px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white hover:bg-gray-50 text-gray-700 border-[#cdcdcd]'}`}
+                                >
+                                    Previous
+                                </button>
+
+                                {Array.from({ length: Math.ceil(filteredProducts.length / itemsPerPage) }).map((_, i) => (
+                                    <button
+                                        key={i + 1}
+                                        onClick={() => { setCurrentPage(i + 1); window.scrollTo(0, 0); }}
+                                        className={`px-4 py-2 border rounded-md text-sm font-medium shadow-sm ${currentPage === i + 1 ? 'bg-[#f3a847] text-white border-[#a88734]' : 'bg-white hover:bg-gray-50 text-gray-700 border-[#cdcdcd]'}`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+
+                                <button
+                                    onClick={() => { setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredProducts.length / itemsPerPage))); window.scrollTo(0, 0); }}
+                                    disabled={currentPage === Math.ceil(filteredProducts.length / itemsPerPage)}
+                                    className={`px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${currentPage === Math.ceil(filteredProducts.length / itemsPerPage) ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : 'bg-white hover:bg-gray-50 text-gray-700 border-[#cdcdcd]'}`}
+                                >
+                                    Next
+                                </button>
                             </div>
                         )}
                     </div>

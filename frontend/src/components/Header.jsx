@@ -40,10 +40,9 @@ function Header() {
     const handleAuthentication = () => {
         if (user) {
             dispatch({
-                type: 'SET_USER',
-                user: null
+                type: 'USER_LOGOUT'
             });
-            localStorage.removeItem('user');
+            navigate('/');
         }
     };
 

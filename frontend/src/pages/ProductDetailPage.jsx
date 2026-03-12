@@ -14,7 +14,8 @@ function ProductDetailPage() {
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState('');
     const [recommendations, setRecommendations] = useState([]);
-    const [{ user }, dispatch] = useStateValue();
+    const [{ user, cart }, dispatch] = useStateValue();
+    const isInCart = cart?.some(item => item.product === product?._id || (product?.asin && item.product === product.asin));
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -65,15 +66,30 @@ function ProductDetailPage() {
         dispatch({
             type: 'ADD_TO_CART',
             item: {
-                product: product._id,
+                product: product._id || product.asin,
                 name: product.name,
                 image: product.image,
-                price: product.price,
-                rating: product.rating,
+                price: Number(product.price),
+                rating: Number(product.rating),
                 qty: Number(qty),
             },
         });
-        navigate('/cart');
+    };
+
+    const handleAddToCart = () => {
+        if (isInCart) {
+            navigate('/cart');
+        } else {
+            addToCart();
+            // navigate('/cart'); // Removed redirection to cart after adding to match Amazon behavior
+        }
+    };
+
+    const buyNow = () => {
+        if (!isInCart) {
+            addToCart();
+        }
+        navigate('/checkout');
     };
 
     const submitReview = async (e) => {
@@ -203,12 +219,15 @@ function ProductDetailPage() {
                         </div>
 
                         <button
-                            onClick={addToCart}
-                            className="button py-2 rounded-full font-medium text-[14px] shadow-sm active:scale-95 transition-transform"
+                            onClick={handleAddToCart}
+                            className={`${isInCart ? 'bg-[#f0f2f2] hover:bg-[#e3e6e6] border-[#d5d9d9]' : 'button'} py-2 rounded-full font-medium text-[14px] shadow-sm active:scale-95 transition-transform border`}
                         >
-                            Add to Cart
+                            {isInCart ? 'Go to Cart' : 'Add to Cart'}
                         </button>
-                        <button className="bg-[#ffa41c] hover:bg-[#ffb446] py-2 rounded-full font-medium text-[14px] shadow-sm active:scale-95 transition-transform border border-[#FF8F00]">
+                        <button
+                            onClick={buyNow}
+                            className="bg-[#ffa41c] hover:bg-[#ffb446] py-2 rounded-full font-medium text-[14px] shadow-sm active:scale-95 transition-transform border border-[#FF8F00]"
+                        >
                             Buy Now
                         </button>
                     </div>
