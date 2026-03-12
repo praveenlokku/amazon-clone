@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Star, MapPin, ChevronRight, Lock, User } from 'lucide-react';
 import { useStateValue } from '../StateProvider.jsx';
+import ProductCarouselRow from '../components/ProductCarouselRow';
 
 function ProductDetailPage() {
     const { id } = useParams();
@@ -12,6 +13,7 @@ function ProductDetailPage() {
     const [qty, setQty] = useState(1);
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState('');
+    const [recommendations, setRecommendations] = useState([]);
     const [{ user }, dispatch] = useStateValue();
 
     useEffect(() => {
@@ -37,6 +39,27 @@ function ProductDetailPage() {
 
         fetchProduct();
     }, [id]);
+
+    useEffect(() => {
+        if (!product) return;
+        const fetchRecommendations = async () => {
+            let keyword = 'bestsellers';
+            if (product.category?.name && product.category.name !== 'General' && product.category.name !== 'Real Amazon Item') {
+                keyword = product.category.name;
+            } else if (product.brand && product.brand !== 'Amazon Vendor' && product.brand !== 'Amazon') {
+                keyword = product.brand;
+            }
+            try {
+                const { data } = await axios.get(`http://localhost:8000/api/amazon/search/?keyword=${keyword}`);
+                if (Array.isArray(data)) {
+                    setRecommendations(data.filter(p => p._id !== product._id && p.asin !== (product.asin || id)).slice(0, 15));
+                }
+            } catch (error) {
+                console.error("Error fetching recommendations", error);
+            }
+        };
+        fetchRecommendations();
+    }, [product, id]);
 
     const addToCart = () => {
         dispatch({
@@ -109,7 +132,7 @@ function ProductDetailPage() {
                                 {[...Array(5)].map((_, i) => (
                                     <Star
                                         key={i}
-                                        className={`h-4 w-4 ${i < Math.floor(product.rating) ? 'text-amazon-orange fill-amazon-orange' : 'text-gray-300'}`}
+                                        className={`h-4 w-4 ${i < Math.floor(product.rating || 0) ? 'text-amazon-orange fill-amazon-orange' : 'text-gray-300'}`}
                                     />
                                 ))}
                             </div>
@@ -122,21 +145,23 @@ function ProductDetailPage() {
                     <div className="space-y-1 py-2">
                         <div className="flex items-baseline text-[#b12704]">
                             <span className="text-[14px] font-medium align-top mt-1">₹</span>
-                            <span className="text-3xl font-medium">{Math.floor(product.price)}</span>
-                            <span className="text-[14px] font-medium align-top mt-1">{(product.price % 1).toFixed(2).substring(2) || '00'}</span>
+                            <span className="text-3xl font-medium">{Math.floor(product.price || 0)}</span>
+                            <span className="text-[14px] font-medium align-top mt-1">{((product.price || 0) % 1).toFixed(2).substring(2) || '00'}</span>
                         </div>
                         <p className="text-[13px] text-[#565959]">Inclusive of all taxes</p>
                         <p className="text-[14px] mt-4">
-                            <span className="font-bold">EMI</span> starts at ₹{Math.floor(product.price / 12)}. No Cost EMI available <span className="text-[#007185] hover:underline cursor-pointer">EMI options</span>
+                            <span className="font-bold">EMI</span> starts at ₹{Math.floor((product.price || 0) / 12)}. No Cost EMI available <span className="text-[#007185] hover:underline cursor-pointer">EMI options</span>
                         </p>
                     </div>
 
                     <div className="border-y border-gray-200 py-6">
                         <h3 className="text-[16px] font-bold text-[#0f1111] mb-2">About this item</h3>
                         <ul className="list-disc list-outside ml-4 text-[14px] text-[#0f1111] space-y-2">
-                            {product.description?.split('.').map((sentence, i) => (
-                                sentence.trim() && <li key={i} className="leading-tight">{sentence.trim()}.</li>
-                            ))}
+                            {(product.description || 'No description available for this item.')
+                                .split('.')
+                                .map((sentence, i) => (
+                                    sentence.trim() && <li key={i} className="leading-tight">{sentence.trim()}.</li>
+                                ))}
                         </ul>
                     </div>
                 </div>
@@ -145,8 +170,8 @@ function ProductDetailPage() {
                 <div className="lg:w-[250px] border border-gray-300 rounded-lg p-4 shadow-sm h-fit bg-white">
                     <div className="flex items-baseline text-[#b12704]">
                         <span className="text-[13px] align-top mt-1 font-medium">₹</span>
-                        <span className="text-2xl font-bold">{Math.floor(product.price)}</span>
-                        <span className="text-[13px] align-top mt-1 font-medium">{(product.price % 1).toFixed(2).substring(2) || '00'}</span>
+                        <span className="text-2xl font-bold">{Math.floor(product.price || 0)}</span>
+                        <span className="text-[13px] align-top mt-1 font-medium">{((product.price || 0) % 1).toFixed(2).substring(2) || '00'}</span>
                     </div>
 
                     <div className="mt-4 text-[14px]">
@@ -195,8 +220,15 @@ function ProductDetailPage() {
                 </div>
             </main>
 
+            {/* Recommendations Section */}
+            {recommendations && recommendations.length > 0 && (
+                <div className="max-w-screen-2xl mx-auto mt-8 mb-4">
+                    <ProductCarouselRow title="Customers who viewed this item also viewed" products={recommendations} />
+                </div>
+            )}
+
             {/* Reviews Section */}
-            <div className="max-w-screen-2xl mx-auto p-4 border-t border-gray-200 mt-12 pb-20">
+            <div className="max-w-screen-2xl mx-auto p-4 border-t border-gray-200 lg:mt-6 pb-20">
                 <div className="flex flex-col lg:flex-row gap-12">
                     {/* Left: Review Stats & Form */}
                     <div className="lg:w-1/3 space-y-8">
@@ -207,11 +239,11 @@ function ProductDetailPage() {
                                     {[...Array(5)].map((_, i) => (
                                         <Star
                                             key={i}
-                                            className={`h-5 w-5 ${i < Math.floor(product.rating) ? 'text-amazon-orange fill-amazon-orange' : 'text-gray-300'}`}
+                                            className={`h-5 w-5 ${i < Math.floor(product.rating || 0) ? 'text-amazon-orange fill-amazon-orange' : 'text-gray-300'}`}
                                         />
                                     ))}
                                 </div>
-                                <span className="font-bold text-[18px]">{product.rating ? product.rating.toFixed(1) : 0} out of 5</span>
+                                <span className="font-bold text-[18px]">{(product.rating || 0).toFixed(1)} out of 5</span>
                             </div>
                             <p className="text-gray-500 text-[14px]">{product.numReviews} global ratings</p>
                         </div>
@@ -266,11 +298,11 @@ function ProductDetailPage() {
                     {/* Right: Reviews List */}
                     <div className="flex-grow">
                         <h2 className="text-xl font-bold mb-6">Top reviews from India</h2>
-                        {product.reviews?.length === 0 ? (
+                        {!(product.reviews || []).length ? (
                             <p className="text-gray-500">No reviews yet. Be the first to share your thoughts!</p>
                         ) : (
                             <div className="space-y-8">
-                                {product.reviews?.map((review) => (
+                                {(product.reviews || []).map((review) => (
                                     <div key={review._id} className="space-y-2">
                                         <div className="flex items-center space-x-2">
                                             <div className="bg-gray-200 rounded-full p-2">

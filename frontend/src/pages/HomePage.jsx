@@ -58,80 +58,80 @@ function HomePage() {
         {
             title: "Appliances for your home | Up to 55% off",
             items: [
-                { name: "Air conditioners", image: "https://m.media-amazon.com/images/I/31S1FhL7OUL._AC_SY170_.jpg" },
-                { name: "Refrigerators", image: "https://m.media-amazon.com/images/I/31WjD-pW8WL._AC_SY170_.jpg" },
-                { name: "Microwaves", image: "https://m.media-amazon.com/images/I/31uQO-X3PFL._AC_SY170_.jpg" },
-                { name: "Washing machines", image: "https://m.media-amazon.com/images/I/41X8-E-pURL._AC_SY170_.jpg" }
+                { name: "Air conditioners", image: "https://m.media-amazon.com/images/I/61Pca7f3SfL._AC_UY218_.jpg" },
+                { name: "Refrigerators", image: "https://m.media-amazon.com/images/I/616XlmzI0zL._AC_UY218_.jpg" },
+                { name: "Microwaves", image: "https://m.media-amazon.com/images/I/71eosSc0pfL._AC_UY218_.jpg" },
+                { name: "Washing machines", image: "https://m.media-amazon.com/images/I/614WPs7pU5L._AC_UY218_.jpg" }
             ],
             linkText: "See more"
         },
         {
             title: "Bulk order discounts + Up to 18% GST savings",
             items: [
-                { name: "Up to 45% off | Laptops", image: "https://m.media-amazon.com/images/I/41-lS7+xM4L._AC_SY170_.jpg" },
-                { name: "Up to 60% off | Kitchen appliances", image: "https://m.media-amazon.com/images/I/41m9O-pEaDL._AC_SY170_.jpg" },
-                { name: "Min. 50% off | Office furniture", image: "https://m.media-amazon.com/images/I/41-qX8Y-eUL._AC_SY170_.jpg" },
-                { name: "Register using GST, Udyam, FSSAI or BPAN", image: "https://m.media-amazon.com/images/I/41uS8IovmHL._AC_SY170_.jpg" }
+                { name: "Up to 45% off | Laptops", image: "https://m.media-amazon.com/images/I/41m9O-pEaDL._AC_SY170_.jpg" },
+                { name: "Up to 60% off | Kitchen appliances", image: "https://m.media-amazon.com/images/I/61oIvQ2+kQL._AC_UY218_.jpg" },
+                { name: "Min. 50% off | Office furniture", image: "https://m.media-amazon.com/images/I/71pc7uwiJbL._AC_UL320_.jpg" },
+                { name: "Register using GST, Udyam, FSSAI or BPAN", image: "https://m.media-amazon.com/images/I/71XEsXS5RlL._AC_UY218_.jpg" }
             ],
             linkText: "Create a free account"
         },
         {
             title: "Starting ₹49 | Deals on home essentials",
             items: [
-                { name: "Cleaning supplies", image: "https://m.media-amazon.com/images/I/41rT2uS1rDL._AC_SY170_.jpg" },
-                { name: "Bathroom accessories", image: "https://m.media-amazon.com/images/I/41vK2S-xXKL._AC_SY170_.jpg" },
-                { name: "Home tools", image: "https://m.media-amazon.com/images/I/41wR2uS-rPL._AC_SY170_.jpg" },
-                { name: "Wallpapers", image: "https://m.media-amazon.com/images/I/41X8-E-pURL._AC_SY170_.jpg" }
+                { name: "Cleaning supplies", image: "https://m.media-amazon.com/images/I/61nCEDQ-ESL._AC_UL320_.jpg" },
+                { name: "Bathroom accessories", image: "https://m.media-amazon.com/images/I/61-rAmHxihL._AC_UL320_.jpg" },
+                { name: "Home tools", image: "https://m.media-amazon.com/images/I/61lmMgNvOIL._AC_UL320_.jpg" },
+                { name: "Wallpapers", image: "https://m.media-amazon.com/images/I/817D24SQA9L._AC_UL320_.jpg" }
             ],
             linkText: "Explore all"
         },
         {
             title: "Automotive essentials | Up to 60% off",
             items: [
-                { name: "Cleaning accessories", image: "https://m.media-amazon.com/images/I/41-lS7+xM4L._AC_SY170_.jpg" },
-                { name: "Tyre & rim care", image: "https://m.media-amazon.com/images/I/41uS8IovmHL._AC_SY170_.jpg" },
-                { name: "Helmets", image: "https://m.media-amazon.com/images/I/41-qX8Y-eUL._AC_SY170_.jpg" },
-                { name: "Vacuum cleaner", image: "https://m.media-amazon.com/images/I/41m9O-pEaDL._AC_SY170_.jpg" }
+                { name: "Cleaning accessories", image: "https://m.media-amazon.com/images/I/71M7SEcsDpL._AC_UL320_.jpg" },
+                { name: "Tyre & rim care", image: "https://m.media-amazon.com/images/I/61AH4tlY50L._AC_UL320_.jpg" },
+                { name: "Helmets", image: "https://m.media-amazon.com/images/I/61TvZbOnniL._AC_UL320_.jpg" },
+                { name: "Vacuum cleaner", image: "https://m.media-amazon.com/images/I/41jxlxiTnGL._AC_UY218_.jpg" }
             ],
             linkText: "See more"
         },
         {
             title: "Customers' Most-Loved Fashion for you",
             items: [
-                { name: "Men's T-shirts", image: "https://m.media-amazon.com/images/I/41-lS7+xM4L._AC_SY170_.jpg" },
-                { name: "Women's Clothing", image: "https://m.media-amazon.com/images/I/41uS8IovmHL._AC_SY170_.jpg" },
-                { name: "Footwear", image: "https://m.media-amazon.com/images/I/41-qX8Y-eUL._AC_SY170_.jpg" },
-                { name: "Accessories", image: "https://m.media-amazon.com/images/I/41m9O-pEaDL._AC_SY170_.jpg" }
+                { name: "Men's T-shirts", image: "https://m.media-amazon.com/images/I/713n+TxyfCL._AC_UL320_.jpg" },
+                { name: "Women's Clothing", image: "https://m.media-amazon.com/images/I/71v+2pfje5L._AC_UL320_.jpg" },
+                { name: "Footwear", image: "https://m.media-amazon.com/images/I/71kZwI4bP2L._AC_UL320_.jpg" },
+                { name: "Accessories", image: "https://m.media-amazon.com/images/I/61Bi0rMcNgL._AC_UL320_.jpg" }
             ],
             linkText: "Explore more"
         },
         {
             title: "Up to 50% off | International brands",
             items: [
-                { name: "Smartphones", image: "https://m.media-amazon.com/images/I/41rT2uS1rDL._AC_SY170_.jpg" },
-                { name: "Laptops", image: "https://m.media-amazon.com/images/I/41vK2S-xXKL._AC_SY170_.jpg" },
-                { name: "Headphones", image: "https://m.media-amazon.com/images/I/41wR2uS-rPL._AC_SY170_.jpg" },
-                { name: "Smartwatches", image: "https://m.media-amazon.com/images/I/41X8-E-pURL._AC_SY170_.jpg" }
+                { name: "Smartphones", image: "https://m.media-amazon.com/images/I/41-lS7+xM4L._AC_SY170_.jpg" },
+                { name: "Laptops", image: "https://m.media-amazon.com/images/I/41m9O-pEaDL._AC_SY170_.jpg" },
+                { name: "Headphones", image: "https://m.media-amazon.com/images/I/51oyBaXOGbL._AC_UY218_.jpg" },
+                { name: "Smartwatches", image: "https://m.media-amazon.com/images/I/61sFBIcJAqL._AC_UY218_.jpg" }
             ],
             linkText: "See all offers"
         },
         {
             title: "Best Sellers in Computers & Accessories",
             items: [
-                { name: "Cables", image: "https://m.media-amazon.com/images/I/41-lS7+xM4L._AC_SY170_.jpg" },
-                { name: "Backpacks", image: "https://m.media-amazon.com/images/I/41uS8IovmHL._AC_SY170_.jpg" },
-                { name: "Monitors", image: "https://m.media-amazon.com/images/I/41-qX8Y-eUL._AC_SY170_.jpg" },
-                { name: "Mice", image: "https://m.media-amazon.com/images/I/41m9O-pEaDL._AC_SY170_.jpg" }
+                { name: "Cables", image: "https://m.media-amazon.com/images/I/61K3e5X2vDL._AC_UY218_.jpg" },
+                { name: "Backpacks", image: "https://m.media-amazon.com/images/I/518UUg7HMKL._AC_UY218_.jpg" },
+                { name: "Monitors", image: "https://m.media-amazon.com/images/I/81axMs7CDOL._AC_UY218_.jpg" },
+                { name: "Mice", image: "https://m.media-amazon.com/images/I/51u8Mrj1CML._AC_UY218_.jpg" }
             ],
             linkText: "See more"
         },
         {
             title: "Best Sellers in Beauty",
             items: [
-                { name: "Sunscreen", image: "https://m.media-amazon.com/images/I/41rT2uS1rDL._AC_SY170_.jpg" },
-                { name: "Facewash", image: "https://m.media-amazon.com/images/I/41vK2S-xXKL._AC_SY170_.jpg" },
-                { name: "Moisturizer", image: "https://m.media-amazon.com/images/I/41wR2uS-rPL._AC_SY170_.jpg" },
-                { name: "Skin Care", image: "https://m.media-amazon.com/images/I/41X8-E-pURL._AC_SY170_.jpg" }
+                { name: "Sunscreen", image: "https://m.media-amazon.com/images/I/61-t4YS+0iL._AC_UL320_.jpg" },
+                { name: "Facewash", image: "https://m.media-amazon.com/images/I/51ixwpTYK7L._AC_UL320_.jpg" },
+                { name: "Moisturizer", image: "https://m.media-amazon.com/images/I/41nFzsxYbvL._AC_UL320_.jpg" },
+                { name: "Skin Care", image: "https://m.media-amazon.com/images/I/41gnNJo3ynL._AC_UL320_.jpg" }
             ],
             linkText: "See more"
         }

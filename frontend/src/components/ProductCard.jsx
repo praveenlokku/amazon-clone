@@ -4,16 +4,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useStateValue } from '../StateProvider.jsx';
 
 function ProductCard({ id, title, price, rating, image, category }) {
-    const [{ cart, user }, dispatch] = useStateValue();
+    const [{ cart }, dispatch] = useStateValue();
     const navigate = useNavigate();
 
     const isInCart = (cart || []).some((item) => item.product === id);
 
     const addToCart = () => {
-        if (!user) {
-            navigate('/login');
-            return;
-        }
         dispatch({
             type: 'ADD_TO_CART',
             item: {

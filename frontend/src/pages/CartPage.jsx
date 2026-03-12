@@ -4,7 +4,7 @@ import { useStateValue, getCartTotal } from '../StateProvider.jsx';
 import CartItem from '../components/CartItem';
 
 function CartPage() {
-    const [{ cart }, dispatch] = useStateValue();
+    const [{ cart, user }, dispatch] = useStateValue();
     const navigate = useNavigate();
 
     return (
@@ -78,7 +78,7 @@ function CartPage() {
                             </div>
 
                             <button
-                                onClick={() => navigate('/checkout')}
+                                onClick={() => user ? navigate('/checkout') : navigate('/login')}
                                 className="button w-full py-2 text-[14px] font-medium rounded-lg shadow-sm mt-2 active:scale-95"
                             >
                                 Proceed to Buy

@@ -27,14 +27,19 @@ class AmazonService:
             response = requests.get(url, headers=cls.HEADERS, timeout=10)
             
             if response.status_code == 503 or '<form action="/errors/validateCaptcha"' in response.text:
-                print("Amazon returned a CAPTCHA or 503 blocked the request. Returning empty.")
+                print("Amazon returned a CAPTCHA or 503 blocked the request.")
+                if search_term != 'bestsellers':
+                    return cls.search_products('bestsellers', category_name)
                 return []
                 
             soup = BeautifulSoup(response.content, 'lxml')
             items = soup.find_all('div', {'data-component-type': 's-search-result'})
             
             if not items:
-                print("No search results found on the page or selector changed. Returning empty.")
+                print("No search results found on the page or selector changed.")
+                if search_term != 'bestsellers':
+                    print(f"Falling back {search_term} block to bestsellers.")
+                    return cls.search_products('bestsellers', category_name)
                 return []
 
             results = []
@@ -68,12 +73,16 @@ class AmazonService:
                     })
 
             if not results:
+                if search_term != 'bestsellers':
+                    return cls.search_products('bestsellers', category_name)
                 return []
                 
             return cls._map_and_save_results(results, category_name)
             
         except Exception as e:
             print(f"Error scraping Amazon directly: {e}")
+            if search_term != 'bestsellers':
+                return cls.search_products('bestsellers', category_name)
             return []
 
     @classmethod
