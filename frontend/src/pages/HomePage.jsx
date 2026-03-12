@@ -3,6 +3,8 @@ import { useLocation, Link } from 'react-router-dom';
 import axios from 'axios';
 import ProductCard from '../components/ProductCard';
 import HomeCard from '../components/HomeCard';
+import HeroSlider from '../components/HeroSlider';
+import ProductCarouselRow from '../components/ProductCarouselRow';
 
 function HomePage() {
     const [products, setProducts] = useState([]);
@@ -18,14 +20,14 @@ function HomePage() {
             const category = query.get('c');
 
             try {
-                let url = 'http://localhost:8000/api/products/';
+                let url = 'http://localhost:8000/api/amazon/search/?keyword=bestsellers';
 
                 // If there's a search term, use the new REAL Amazon API endpoint
                 if (searchTerm) {
                     url = `http://localhost:8000/api/amazon/search/?keyword=${searchTerm}`;
                     if (category) url += `&category=${category}`;
                 } else if (category) {
-                    url = `http://localhost:8000/api/products/?category=${category}`;
+                    url = `http://localhost:8000/api/amazon/search/?keyword=${category}`;
                 }
 
                 const { data } = await axios.get(url);
@@ -138,32 +140,10 @@ function HomePage() {
     return (
         <div className="mx-auto max-w-screen-2xl bg-[#eaeded] min-h-screen">
             {!isSearching && (
-                <div className="relative bg-[#FF6100]">
-                    <div className="max-w-screen-2xl mx-auto flex items-center justify-between px-10 py-8">
-                        <div className="text-white space-y-4 max-w-[50%]">
-                            <h1 className="text-[52px] font-bold leading-tight">Starting ₹199</h1>
-                            <p className="text-[28px] font-medium opacity-90">Deals on fashion & beauty</p>
-                            <div className="pt-4">
-                                <img
-                                    src="https://m.media-amazon.com/images/G/31/img21/AmazonPay/Rewards/Rewards_Widget/Reward_Widget_Banner_V2_330x90._CB629486001_.png"
-                                    alt="Unlimited 5% cashback"
-                                    className="h-[120px] object-contain"
-                                />
-                            </div>
-                        </div>
-                        <div className="flex-grow flex justify-end">
-                            <img
-                                src="https://m.media-amazon.com/images/I/61G+G9-vAUL._SX3000_.jpg"
-                                alt="Deals"
-                                className="h-[400px] w-auto object-contain mix-blend-multiply"
-                            />
-                        </div>
-                    </div>
-                    <div className="absolute w-full h-40 bg-gradient-to-t from-[#eaeded] to-transparent bottom-0 z-20" />
-                </div>
+                <HeroSlider />
             )}
 
-            <div className={`relative z-30 mx-auto px-4 ${!isSearching ? '-mt-20' : 'pt-6'}`}>
+            <div className={`relative z-30 mx-auto px-4 ${!isSearching ? '-mt-[100px] md:-mt-[150px] lg:-mt-[250px]' : 'pt-6'}`}>
                 {isSearching && (
                     <div className="bg-white p-4 mb-4 shadow-sm rounded-sm border border-gray-200">
                         <h1 className="text-[18px] text-[#565959]">
@@ -173,11 +153,19 @@ function HomePage() {
                 )}
 
                 {!isSearching && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                        {gridCards.map((card, i) => (
-                            <HomeCard key={i} title={card.title} items={card.items} linkText={card.linkText} />
-                        ))}
-                    </div>
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                            {gridCards.map((card, i) => (
+                                <HomeCard key={i} title={card.title} items={card.items} linkText={card.linkText} />
+                            ))}
+                        </div>
+
+                        {/* Horizontal Scrolling Rows */}
+                        <div className="-mx-4 sm:mx-0">
+                            <ProductCarouselRow title="Today's Deals" products={(products || []).slice(0, 10)} />
+                            <ProductCarouselRow title="Best Sellers in Electronics" products={(products || []).slice(4, 14)} />
+                        </div>
+                    </>
                 )}
 
                 {loading ? (

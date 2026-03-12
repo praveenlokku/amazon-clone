@@ -1,12 +1,19 @@
 import React from 'react';
 import { Star } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useStateValue } from '../StateProvider.jsx';
 
 function ProductCard({ id, title, price, rating, image, category }) {
-    const [{ }, dispatch] = useStateValue();
+    const [{ cart, user }, dispatch] = useStateValue();
+    const navigate = useNavigate();
+
+    const isInCart = (cart || []).some((item) => item.product === id);
 
     const addToCart = () => {
+        if (!user) {
+            navigate('/login');
+            return;
+        }
         dispatch({
             type: 'ADD_TO_CART',
             item: {
@@ -60,7 +67,16 @@ function ProductCard({ id, title, price, rating, image, category }) {
                 </div>
             </div>
 
-            <button onClick={addToCart} className="button mt-2 py-1.5 shadow-sm active:scale-95">Add to Cart</button>
+            {isInCart ? (
+                <button
+                    onClick={() => navigate('/cart')}
+                    className="w-full mt-2 py-1.5 shadow-sm active:scale-95 text-[13px] font-bold rounded-full bg-[#f3a847] hover:bg-[#e3962e] border border-[#a88734] transition-colors"
+                >
+                    Go to Cart
+                </button>
+            ) : (
+                <button onClick={addToCart} className="button mt-2 py-1.5 shadow-sm active:scale-95">Add to Cart</button>
+            )}
         </div>
     );
 }

@@ -27,15 +27,15 @@ class AmazonService:
             response = requests.get(url, headers=cls.HEADERS, timeout=10)
             
             if response.status_code == 503 or '<form action="/errors/validateCaptcha"' in response.text:
-                print("Amazon returned a CAPTCHA or 503 blocked the request. Using mock fallback.")
-                return cls._get_mock_real_data(search_term)
+                print("Amazon returned a CAPTCHA or 503 blocked the request. Returning empty.")
+                return []
                 
             soup = BeautifulSoup(response.content, 'lxml')
             items = soup.find_all('div', {'data-component-type': 's-search-result'})
             
             if not items:
-                print("No search results found on the page or selector changed. Using mock fallback.")
-                return cls._get_mock_real_data(search_term)
+                print("No search results found on the page or selector changed. Returning empty.")
+                return []
 
             results = []
             for item in items[:48]:  # Get top 48 items
@@ -68,13 +68,13 @@ class AmazonService:
                     })
 
             if not results:
-                return cls._get_mock_real_data(search_term)
+                return []
                 
             return cls._map_and_save_results(results, category_name)
             
         except Exception as e:
             print(f"Error scraping Amazon directly: {e}")
-            return cls._get_mock_real_data(search_term)
+            return []
 
     @classmethod
     def get_product_details(cls, asin):
@@ -141,30 +141,3 @@ class AmazonService:
             'description': product.description
         }
 
-    @staticmethod
-    def _get_mock_real_data(search_term):
-        print("Using standard fallback list with working images.")
-        valid_images = [
-            "https://m.media-amazon.com/images/I/41-lS7+xM4L._AC_SL1500_.jpg",
-            "https://m.media-amazon.com/images/I/41uS8IovmHL._AC_SL1500_.jpg",
-            "https://m.media-amazon.com/images/I/41-qX8Y-eUL._AC_SL1500_.jpg",
-            "https://m.media-amazon.com/images/I/41m9O-pEaDL._AC_SL1500_.jpg",
-            "https://m.media-amazon.com/images/I/41rT2uS1rDL._AC_SL1500_.jpg",
-            "https://m.media-amazon.com/images/I/41vK2S-xXKL._AC_SL1500_.jpg",
-            "https://m.media-amazon.com/images/I/41wR2uS-rPL._AC_SL1500_.jpg",
-            "https://m.media-amazon.com/images/I/41X8-E-pURL._AC_SL1500_.jpg"
-        ]
-        return [
-            {
-                '_id': 9990 + i,
-                'asin': f"MOCK_{i}",
-                'name': f"Premium {search_term} - Variant {i}",
-                'image': valid_images[(i - 1) % len(valid_images)],
-                'price': 1299.00 + (i * 100),
-                'rating': 4.5,
-                'countInStock': 5,
-                'brand': "Amazon Vendor",
-                'category': {'name': 'Featured'},
-                'description': f"This is a premium {search_term} with excellent build quality and warranty."
-            } for i in range(1, 9)
-        ]
