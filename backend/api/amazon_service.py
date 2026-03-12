@@ -13,8 +13,18 @@ class AmazonService:
     """
     
     HEADERS = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
         'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Cache-Control': 'max-age=0',
     }
     
     @staticmethod
@@ -57,14 +67,27 @@ class AmazonService:
     def _search_via_api(cls, search_term, category_name=None):
         api_key = os.environ.get('RAPIDAPI_KEY')
         api_host = os.environ.get('RAPIDAPI_HOST', 'real-time-amazon-data.p.rapidapi.com')
-        api_endpoint = os.environ.get('RAPIDAPI_ENDPOINT', 'search').strip('/')
-        url = f"https://{api_host.strip('/')}/{api_endpoint}"
-        querystring = {"query": search_term, "page": "1", "country": "IN", "sort_by": "RELEVANCE"}
+        api_endpoint = os.environ.get('RAPIDAPI_ENDPOINT')
         
+        if not api_endpoint:
+            if 'amazon-data-scraper110' in api_host:
+                api_endpoint = 'search'  # Keeping current value as it was reported as 404 though
+            else:
+                api_endpoint = 'search'
+        
+        api_endpoint = api_endpoint.strip('/')
+        url = f"https://{api_host.strip('/')}/{api_endpoint}"
+
         headers = {
             "X-RapidAPI-Key": api_key,
             "X-RapidAPI-Host": api_host.strip('/')
         }
+        
+        # Determine the correct parameter names based on common API standards
+        if 'real-time-amazon-data' in api_host:
+            querystring = {"q": search_term, "page": "1", "country": "IN", "sort_by": "RELEVANCE"}
+        else:
+            querystring = {"query": search_term, "page": "1", "country": "IN", "sort_by": "RELEVANCE"}
 
         try:
             print(f"Calling RapidAPI: {url}")
