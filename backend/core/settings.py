@@ -112,14 +112,25 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True # For flexibility with multiple origins (Vercel, local)
+CORS_ALLOW_ALL_ORIGINS = True 
+CORS_ALLOW_CREDENTIALS = True
 
-# Optional: Add specific origins if you want to be more restrictive
-# CORS_ALLOWED_ORIGINS = [
-#     "https://amazon-clone-omega-bay.vercel.app",
-#     "http://localhost:3000",
-#     "http://127.0.0.1:3000",
-# ]
+CORS_ALLOWED_ORIGINS = [
+    "https://amazon-clone-omega-bay.vercel.app",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173", # Common Vite port
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://amazon-clone-omega-bay.vercel.app",
+    "https://amazon-clone-production-5dc7.up.railway.app",
+]
+
+# Required for Railway proxy
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
 
 ROOT_URLCONF = 'core.urls'
 
