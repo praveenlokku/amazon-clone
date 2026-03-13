@@ -37,13 +37,24 @@ class AmazonService:
         # Amazon image URLs often look like: 
         # https://m.media-amazon.com/images/I/71657TiFeHL._AC_SY200_.jpg
         # We want: https://m.media-amazon.com/images/I/71657TiFeHL.jpg
-        # Or: https://m.media-amazon.com/images/I/71657TiFeHL._SX679_.jpg (which is also high res)
         
-        # Regex to find the part between the last dot before the extension and the extension
         import re
         # This matches the period followed by underscore and alphanumeric characters until another period
-        cleaned_url = re.sub(r'\._[A-Z0-9,_-]+\.', '.', url)
-        return cleaned_url
+        # We make it more specific to catch common Amazon resizers like _AC_..., _SX..., _SY...
+        # but avoid destructive cleans on non-standard URLs
+        if 'm.media-amazon.com' in url or 'images-na.ssl-images-amazon.com' in url:
+            # Match the first dot after /I/ or /images/ and look for any tags before the final extension
+            # Example: .../I/71657TiFeHL._AC_SY200_.jpg -> .../I/71657TiFeHL.jpg
+            match = re.search(r'(.*/images/I/[A-Z0-9]+)\..*(\.jpg|\.png|\.jpeg|\.gif)', url, re.IGNORECASE)
+            if match:
+                return match.group(1) + match.group(2)
+            
+            # Simple fallback regex if path structure is different
+            cleaned_url = re.sub(r'\._[A-Z0-9,._-]+_?(\.jpg|\.png|\.jpeg)', r'\1', url)
+            if cleaned_url == url:
+                cleaned_url = re.sub(r'\._[A-Z0-9,._-]+\.', '.', url)
+            return cleaned_url
+        return url
 
     @classmethod
     def search_products(cls, search_term, category_name=None):
@@ -117,7 +128,7 @@ class AmazonService:
                             'asin': p.get('asin'),
                             'title': p.get('product_title'),
                             'price': p.get('product_price', '0').replace('₹', '').replace(',', ''),
-                            'image': p.get('product_photo'),
+                            'image': p.get('product_photo') or p.get('image') or p.get('url'),
                             'stars': float(p.get('product_star_rating', 4.0)) if p.get('product_star_rating') else 4.0,
                             'brand': p.get('brand', 'Amazon Vendor'),
                             'description': p.get('product_title')
@@ -126,12 +137,12 @@ class AmazonService:
                 if results:
                     return cls._map_and_save_results(results, category_name)
             
-            print(f"RapidAPI failed with status {response.status_code}. Falling back to scraping.")
-            return cls._search_via_scraping(search_term, category_name)
+            print(f"RapidAPI failed with status {response.status_code}.")
+            return []
             
         except Exception as e:
             print(f"Error calling RapidAPI: {e}")
-            return cls._search_via_scraping(search_term, category_name)
+            return []
 
     @classmethod
     def _search_via_scraping(cls, search_term, category_name=None):
@@ -144,9 +155,6 @@ class AmazonService:
             
             if response.status_code == 503 or '<form action="/errors/validateCaptcha"' in response.text:
                 print("Amazon returned a CAPTCHA or 503 blocked the request.")
-                if search_term != 'bestsellers':
-                    return cls._search_via_scraping('bestsellers', category_name)
-                # If even bestsellers fails, return empty list (we'll handle fallback in search_products)
                 return []
                 
             soup = BeautifulSoup(response.content, 'lxml')
@@ -154,8 +162,6 @@ class AmazonService:
             
             if not items:
                 print("No search results found on the page or selector changed.")
-                if search_term != 'bestsellers':
-                    return cls._search_via_scraping('bestsellers', category_name)
                 return []
 
             results = []
@@ -168,7 +174,46 @@ class AmazonService:
                 price = price_elem.text.strip().replace(',', '') if price_elem else '0'
                 
                 img_elem = item.find('img', {'class': 's-image'})
-                image = img_elem.get('src') if img_elem else ''
+                image = ''
+                if img_elem:
+                    # Amazon often lazy-loads images. Try multiple attributes, skipping placeholders.
+                    potential_sources = [
+                        img_elem.get('data-src'),
+                        img_elem.get('data-lazy-img'),
+                        img_elem.get('srcset'),
+                        img_elem.get('src')
+                    ]
+                    
+                    for src in potential_sources:
+                        if src and 'grey-pixel' not in src and 'transparency' not in src.lower():
+                            if 'm.media-amazon.com/images/I/' in src or 'images-na.ssl-images-amazon.com' in src:
+                                if ' ' in src: # Handle srcset
+                                    image = src.split(' ')[0]
+                                else:
+                                    image = src
+                                break
+                    
+                    # Fallback if all failed but we have a src
+                    if not image:
+                        image = img_elem.get('src') or ''
+                
+                # If no image found or still a pixel, check wrapper or other attributes
+                if not image or 'grey-pixel' in image or 'transparent-pixel' in image:
+                    # Try checking for data-image-source-set or other lazy load attributes
+                    image = item.get('data-image-source-set') or ''
+                    if ' ' in image: image = image.split(' ')[0]
+                    
+                    if not image:
+                        wrapper = item.find('div', {'class': 's-image-fixed-height'})
+                        if wrapper:
+                            img = wrapper.find('img')
+                            if img:
+                                image = img.get('data-src') or img.get('src') or ''
+                
+                # ABSOLUTELY skip if we still have a placeholder
+                if not image or 'grey-pixel' in image or 'transparent-pixel' in image:
+                    continue
+                    
                 image = cls.clean_amazon_url(image)
                 
                 rating_elem = item.find('span', {'class': 'a-icon-alt'})
@@ -190,16 +235,13 @@ class AmazonService:
                     })
 
             if not results:
-                if search_term != 'bestsellers':
-                    return cls._search_via_scraping('bestsellers', category_name)
+                print("No valid results filtered from the page.")
                 return []
                 
             return cls._map_and_save_results(results, category_name)
             
         except Exception as e:
             print(f"Error scraping Amazon directly: {e}")
-            if search_term != 'bestsellers':
-                return cls._search_via_scraping('bestsellers', category_name)
             return []
 
     @classmethod

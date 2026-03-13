@@ -10,7 +10,8 @@ import ProductCarouselRow from '../components/ProductCarouselRow';
 function HomePage() {
     const [products, setProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false); // Changed to false by default for better initial render
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 12;
     const location = useLocation();
@@ -43,9 +44,11 @@ function HomePage() {
                 }
                 setCurrentPage(1);
                 setLoading(false);
+                setIsInitialLoad(false);
             } catch (error) {
                 console.error("Error fetching products", error);
                 setLoading(false);
+                setIsInitialLoad(false);
                 // Fallback for local testing if API fails or search is empty
                 setFilteredProducts([]);
                 setCurrentPage(1);
@@ -173,13 +176,22 @@ function HomePage() {
                     </>
                 )}
 
-                {loading ? (
-                    <div className="flex justify-center items-center h-64">
-                        <p className="text-xl font-bold animate-pulse text-gray-500 italic">Finding best deals for you...</p>
+                {(loading || isInitialLoad) ? (
+                    <div className={`grid ${isSearching ? 'grid-cols-1' : 'grid-flow-row-dense md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'} gap-4 pb-10`}>
+                        {Array(itemsPerPage).fill().map((_, i) => (
+                            <div key={i} className={`bg-white p-5 rounded-sm border border-gray-100 ${isSearching ? 'flex space-x-4 h-44' : 'h-[380px] flex flex-col'}`}>
+                                <div className={`${isSearching ? 'w-[220px] h-full' : 'w-full h-52'} bg-gray-200 animate-pulse rounded-md mb-4`}></div>
+                                <div className="flex-grow flex flex-col space-y-3">
+                                    <div className="h-4 bg-gray-200 animate-pulse w-3/4 rounded"></div>
+                                    <div className="h-4 bg-gray-200 animate-pulse w-1/2 rounded"></div>
+                                    <div className="mt-auto h-8 bg-gray-200 animate-pulse w-full rounded-full"></div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ) : (
                     <div>
-                        <div className={`grid ${isSearching ? 'grid-cols-1' : 'grid-flow-row-dense md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'} gap-4 pb-10`}>
+                        <div className={`grid ${isSearching ? 'grid-cols-1' : 'grid-flow-row-dense md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'} gap-4 pb-10 min-h-[400px]`}>
                             {(filteredProducts || []).length > 0 ? (
                                 (() => {
                                     const totalPages = Math.ceil((filteredProducts || []).length / itemsPerPage);

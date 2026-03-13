@@ -44,7 +44,9 @@ function ProductCard({ id, title, price, rating, image, category, horizontal }) 
                                 <Star key={i} className={`h-4 w-4 ${i < Math.floor(rating || 0) ? 'text-[#ffa41c] fill-[#ffa41c]' : 'text-gray-200'}`} />
                             ))}
                         </div>
-                        <span className="text-blue-600 text-[13px] hover:text-amazon-orange ml-1">{(Math.random() * 1000 + 100).toFixed(0)}</span>
+                        <span className="text-blue-600 text-[13px] hover:text-amazon-orange ml-1">
+                            {id ? (id.toString().charCodeAt(0) * 7 + 120) : '450'} 
+                        </span>
                     </div>
                     <div className="flex items-center space-x-2 my-2">
                         <div className="flex items-start text-[#0f1111]">
@@ -98,7 +100,9 @@ function ProductCard({ id, title, price, rating, image, category, horizontal }) 
                             <Star key={i} className={`h-4 w-4 ${i < Math.floor(rating || 0) ? 'text-[#ffa41c] fill-[#ffa41c]' : 'text-gray-200'}`} />
                         ))}
                     </div>
-                    <span className="text-blue-600 text-[12px] hover:underline hover:text-amazon-orange cursor-pointer">820</span>
+                    <span className="text-blue-600 text-[12px] hover:underline hover:text-amazon-orange cursor-pointer">
+                        {id ? (id.toString().charCodeAt(0) * 5 + 85) : '120'}
+                    </span>
                 </div>
 
                 <div className="flex items-center space-x-2 mb-2">
