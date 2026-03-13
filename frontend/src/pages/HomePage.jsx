@@ -24,7 +24,7 @@ function HomePage() {
             const category = query.get('c');
 
             try {
-                let url = `${API_BASE_URL}/api/amazon/search/?keyword=bestsellers`;
+                let url = `${API_BASE_URL}/api/amazon/search/?keyword=mobiles`;
 
                 // If there's a search term, use the new REAL Amazon API endpoint
                 if (searchTerm) {

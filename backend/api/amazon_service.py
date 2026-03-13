@@ -12,18 +12,39 @@ class AmazonService:
     Includes a database caching mechanism to store results in our local DB.
     """
     
-    HEADERS = {
-        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Device-Memory': '8',
-        'Viewport-Width': '430',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
-        'Sec-Fetch-User': '?1',
-    }
+    USER_AGENTS = [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1',
+        'Mozilla/5.0 (iPad; CPU OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0',
+    ]
+
+    @classmethod
+    def get_headers(cls):
+        # Rotate between these realistic desktop and mobile User-Agents
+        ua = random.choice(cls.USER_AGENTS)
+        
+        headers = {
+            'User-Agent': ua,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Language': 'en-IN,en-GB;q=0.9,en-US;q=0.8,hi;q=0.7',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Fetch-User': '?1',
+            'Cache-Control': 'max-age=0',
+        }
+        
+        # Randomize header order (some systems detect fixed header order)
+        items = list(headers.items())
+        random.shuffle(items)
+        return dict(items)
     
     @staticmethod
     def clean_amazon_url(url):
@@ -58,19 +79,23 @@ class AmazonService:
 
     @classmethod
     def search_products(cls, search_term, category_name=None):
-        """
-        Main entry point for product search. 
-        Prioritizes RapidAPI for reliability in production, falls back to scraping for local dev.
-        """
+        if search_term == 'bestsellers':
+            search_term = 'mobiles' # More professional default than random "bestsellers" (which often returns books)
+
         api_key = os.environ.get('RAPIDAPI_KEY')
         api_host = os.environ.get('RAPIDAPI_HOST', 'real-time-amazon-data.p.rapidapi.com')
 
+        results = []
         if api_key and api_key != 'YOUR_RAPIDAPI_KEY':
             print(f"Using RapidAPI for search: {search_term}")
-            return cls._search_via_api(search_term, category_name)
+            results = cls._search_via_api(search_term, category_name)
         
-        print(f"Falling back to scraping for search: {search_term}")
-        return cls._search_via_scraping(search_term, category_name)
+        # If API failed or returned nothing, use robust scraping
+        if not results:
+            print(f"Falling back to scraping for search: {search_term}")
+            results = cls._search_via_scraping(search_term, category_name)
+            
+        return results
 
     @classmethod
     def _search_via_api(cls, search_term, category_name=None):
@@ -150,8 +175,8 @@ class AmazonService:
         
         try:
             # Add small delay to prevent immediate bot detection
-            time.sleep(random.uniform(0.5, 1.5))
-            response = requests.get(url, headers=cls.HEADERS, timeout=10)
+            time.sleep(random.uniform(1.0, 3.0))
+            response = requests.get(url, headers=cls.get_headers(), timeout=15)
             
             if response.status_code == 503 or '<form action="/errors/validateCaptcha"' in response.text:
                 print("Amazon returned a CAPTCHA or 503 blocked the request.")
