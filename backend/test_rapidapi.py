@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 # Let's adjust the path if needed, but easier to just use the values we already read.
 
 API_KEY = "b9c0ccb859msh61d334771dda989p12c291jsnea42ee825d6f"
-API_HOST = "amazon-data-scraper110.p.rapidapi.com"
+API_HOST = "amazon-product-data6.p.rapidapi.com"
 
 endpoints = [
     ("/products/search", {"query": "laptop"}),
