@@ -129,17 +129,16 @@ class AmazonService:
                 return None
 
         # 1. Try Primary Host
+        # If it's the real-time-amazon-data API, we know the endpoint is /v1/products/search
+        if 'real-time-amazon-data' in primary_host:
+            api_endpoint = 'v1/products/search'
+            
         response = try_request(primary_host, api_endpoint)
         
-        # 2. If 404 and primary wasn't already the fallback, try the fallback host
-        if response and response.status_code == 404 and fallback_host not in primary_host:
-            print(f"DEBUG: Host {primary_host} returned 404. Trying fallback host {fallback_host}...")
-            response = try_request(fallback_host, 'search')
-            
-            # 3. If standard fallback /search also 404s, try v1 variation
-            if response and response.status_code == 404:
-                print(f"DEBUG: Fallback /search also 404. Trying /v1/products/search...")
-                response = try_request(fallback_host, 'v1/products/search')
+        # 2. If 404/403 and primary wasn't already the fallback, try the fallback host with default endpoints
+        if response and response.status_code in [403, 404] and fallback_host not in primary_host:
+            print(f"DEBUG: Host {primary_host} returned {response.status_code}. Trying fallback host {fallback_host}...")
+            response = try_request(fallback_host, 'v1/products/search')
 
         try:
             if response and response.status_code == 200:
