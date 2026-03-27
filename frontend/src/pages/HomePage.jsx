@@ -28,68 +28,39 @@ function HomePage() {
 
             try {
                 let data = [];
-                // If there's a search term and we have a frontend API key, call RapidAPI directly
-                if (searchTerm && RAPIDAPI_KEY && RAPIDAPI_KEY !== 'YOUR_RAPIDAPI_KEY') {
-                    console.log("Calling RapidAPI directly from frontend...");
-                    const options = {
-                        method: 'GET',
-                        url: `https://${RAPIDAPI_HOST}/v1/products/search`,
-                        params: {
-                            query: searchTerm,
-                            page: '1',
-                            country: 'IN',
-                            sort_by: 'RELEVANCE'
-                        },
-                        headers: {
-                            'x-rapidapi-key': RAPIDAPI_KEY,
-                            'x-rapidapi-host': RAPIDAPI_HOST
-                        }
-                    };
-
-                    const response = await axios.request(options);
-                    const products = response.data?.data?.products || [];
-                    
-                    // Map RapidAPI structure to our internal app structure
-                    data = products.map(p => ({
-                        _id: p.asin,
-                        asin: p.asin,
-                        name: p.product_title,
-                        price: parseFloat(p.product_price?.replace('₹', '').replace(',', '') || 0),
-                        image: p.product_photo,
-                        rating: parseFloat(p.product_star_rating || 4.0),
-                        brand: p.brand || 'Amazon',
-                        category: { name: category || 'General' },
-                        description: p.product_title
-                    }));
-                } else {
-                    // Fallback to backend API
-                    let url = `${API_BASE_URL}/api/amazon/search/?keyword=mobiles`;
-                    if (searchTerm) {
-                        url = `${API_BASE_URL}/api/amazon/search/?keyword=${searchTerm}`;
-                        if (category) url += `&category=${category}`;
-                    } else if (category) {
-                        url = `${API_BASE_URL}/api/amazon/search/?keyword=${category}`;
-                    }
-                    const response = await axios.get(url);
-                    data = response.data;
-                }
-
+                
+                // Always use the backend API for search and categories
+                // The backend handles RapidAPI logic and scraping fallback robustly
+                let url = `${API_BASE_URL}/api/amazon/search/?keyword=mobiles`;
+                
                 if (searchTerm) {
-                    setFilteredProducts(data);
+                    url = `${API_BASE_URL}/api/amazon/search/?keyword=${encodeURIComponent(searchTerm)}`;
+                    if (category) url += `&category=${encodeURIComponent(category)}`;
+                } else if (category) {
+                    url = `${API_BASE_URL}/api/amazon/search/?keyword=${encodeURIComponent(category)}`;
+                }
+                
+                console.log(`Fetching products from: ${url}`);
+                const response = await axios.get(url);
+                data = response.data;
+
+                if (searchTerm || category) {
+                    setFilteredProducts(data || []);
                 } else {
-                    setProducts(data);
-                    setFilteredProducts(data);
+                    setProducts(data || []);
+                    setFilteredProducts(data || []);
                 }
                 setCurrentPage(1);
                 setLoading(false);
                 setIsInitialLoad(false);
             } catch (error) {
-                console.error("Error fetching products", error);
+                console.error("Error fetching products from backend", error);
                 setLoading(false);
                 setIsInitialLoad(false);
                 setFilteredProducts([]);
                 setCurrentPage(1);
             }
+
         };
 
         fetchProducts();
