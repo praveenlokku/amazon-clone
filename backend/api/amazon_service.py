@@ -13,16 +13,17 @@ class AmazonService:
     """
     
     USER_AGENTS = [
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1',
-        'Mozilla/5.0 (iPad; CPU OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0',
     ]
 
     @classmethod
-    def get_headers(cls):
+    def get_headers(cls, term=None):
         # Rotate between these realistic desktop and mobile User-Agents
         ua = random.choice(cls.USER_AGENTS)
         
@@ -31,12 +32,13 @@ class AmazonService:
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
             'Accept-Language': 'en-IN,en-GB;q=0.9,en-US;q=0.8,hi;q=0.7',
             'Accept-Encoding': 'gzip, deflate, br',
+            'Referer': f'https://www.google.com/search?q=amazon+in+{term.replace(" ", "+") if term else "shop"}',
             'DNT': '1',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
             'Sec-Fetch-Dest': 'document',
             'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Fetch-Site': 'cross-site',
             'Sec-Fetch-User': '?1',
             'Cache-Control': 'max-age=0',
         }
@@ -145,13 +147,16 @@ class AmazonService:
                 data = response.json()
                 products = data.get('data', {}).get('products', [])
                 
+                if not products:
+                    print(f"RapidAPI returned 200 but no products found in 'data.products'.")
+
                 results = []
                 for p in products:
                     if p.get('asin') and p.get('product_title'):
                         results.append({
                             'asin': p.get('asin'),
                             'title': p.get('product_title'),
-                            'price': p.get('product_price', '0').replace('₹', '').replace(',', ''),
+                            'price': str(p.get('product_price', '0')).replace('₹', '').replace(',', ''),
                             'image': p.get('product_photo') or p.get('image') or p.get('url'),
                             'stars': float(p.get('product_star_rating', 4.0)) if p.get('product_star_rating') else 4.0,
                             'brand': p.get('brand', 'Amazon Vendor'),
@@ -161,7 +166,13 @@ class AmazonService:
                 if results:
                     return cls._map_and_save_results(results, category_name)
             
-            print(f"RapidAPI failed with status {response.status_code}.")
+            if response:
+                if response.status_code == 429:
+                    print(f"RapidAPI Rate Limit (429) hit. Falling back to scraping.")
+                elif response.status_code == 403:
+                    print(f"RapidAPI Forbidden (403). Check subscription. Falling back to scraping.")
+                else:
+                    print(f"RapidAPI failed with status {response.status_code}.")
             return []
             
         except Exception as e:
@@ -175,7 +186,7 @@ class AmazonService:
         try:
             # Add small delay to prevent immediate bot detection
             time.sleep(random.uniform(1.0, 3.0))
-            response = requests.get(url, headers=cls.get_headers(), timeout=15)
+            response = requests.get(url, headers=cls.get_headers(search_term), timeout=15)
             
             if response.status_code == 503 or '<form action="/errors/validateCaptcha"' in response.text:
                 print("Amazon returned a CAPTCHA or 503 blocked the request.")
@@ -381,7 +392,7 @@ class AmazonService:
         url = f"https://www.amazon.in/dp/{asin}"
         try:
             time.sleep(random.uniform(1.5, 3))
-            response = requests.get(url, headers=cls.HEADERS, timeout=15)
+            response = requests.get(url, headers=cls.get_headers(asin), timeout=15)
             if response.status_code != 200:
                 print(f"Failed to fetch product page for {asin}: {response.status_code}")
                 return

@@ -23,18 +23,56 @@ function HomePage() {
             const searchTerm = query.get('s');
             const category = query.get('c');
 
+            const RAPIDAPI_KEY = import.meta.env.VITE_RAPIDAPI_KEY;
+            const RAPIDAPI_HOST = import.meta.env.VITE_RAPIDAPI_HOST || 'real-time-amazon-data.p.rapidapi.com';
+
             try {
-                let url = `${API_BASE_URL}/api/amazon/search/?keyword=mobiles`;
+                let data = [];
+                // If there's a search term and we have a frontend API key, call RapidAPI directly
+                if (searchTerm && RAPIDAPI_KEY && RAPIDAPI_KEY !== 'YOUR_RAPIDAPI_KEY') {
+                    console.log("Calling RapidAPI directly from frontend...");
+                    const options = {
+                        method: 'GET',
+                        url: `https://${RAPIDAPI_HOST}/v1/products/search`,
+                        params: {
+                            query: searchTerm,
+                            page: '1',
+                            country: 'IN',
+                            sort_by: 'RELEVANCE'
+                        },
+                        headers: {
+                            'x-rapidapi-key': RAPIDAPI_KEY,
+                            'x-rapidapi-host': RAPIDAPI_HOST
+                        }
+                    };
 
-                // If there's a search term, use the new REAL Amazon API endpoint
-                if (searchTerm) {
-                    url = `${API_BASE_URL}/api/amazon/search/?keyword=${searchTerm}`;
-                    if (category) url += `&category=${category}`;
-                } else if (category) {
-                    url = `${API_BASE_URL}/api/amazon/search/?keyword=${category}`;
+                    const response = await axios.request(options);
+                    const products = response.data?.data?.products || [];
+                    
+                    // Map RapidAPI structure to our internal app structure
+                    data = products.map(p => ({
+                        _id: p.asin,
+                        asin: p.asin,
+                        name: p.product_title,
+                        price: parseFloat(p.product_price?.replace('₹', '').replace(',', '') || 0),
+                        image: p.product_photo,
+                        rating: parseFloat(p.product_star_rating || 4.0),
+                        brand: p.brand || 'Amazon',
+                        category: { name: category || 'General' },
+                        description: p.product_title
+                    }));
+                } else {
+                    // Fallback to backend API
+                    let url = `${API_BASE_URL}/api/amazon/search/?keyword=mobiles`;
+                    if (searchTerm) {
+                        url = `${API_BASE_URL}/api/amazon/search/?keyword=${searchTerm}`;
+                        if (category) url += `&category=${category}`;
+                    } else if (category) {
+                        url = `${API_BASE_URL}/api/amazon/search/?keyword=${category}`;
+                    }
+                    const response = await axios.get(url);
+                    data = response.data;
                 }
-
-                const { data } = await axios.get(url);
 
                 if (searchTerm) {
                     setFilteredProducts(data);
@@ -49,7 +87,6 @@ function HomePage() {
                 console.error("Error fetching products", error);
                 setLoading(false);
                 setIsInitialLoad(false);
-                // Fallback for local testing if API fails or search is empty
                 setFilteredProducts([]);
                 setCurrentPage(1);
             }
