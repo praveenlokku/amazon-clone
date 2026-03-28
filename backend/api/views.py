@@ -123,14 +123,33 @@ def getOrderById(request, pk):
 
 @api_view(['GET'])
 def searchRealProducts(request):
-    query = request.query_params.get('keyword')
+    query = request.query_params.get('keyword', 'mobiles')
     category = request.query_params.get('category')
     
-    if not query:
-        return Response({'detail': 'Keyword is required'}, status=status.HTTP_400_BAD_REQUEST)
+    print(f"\n[DEBUG] searchRealProducts called with keyword='{query}', category='{category}'")
+    
+    try:
+        results = AmazonService.search_products(query, category)
+        print(f"[DEBUG] search_products for '{query}' returned {len(results)} items")
         
-    results = AmazonService.search_products(query, category)
-    return Response(results)
+        # If real-time fetch failed to find anything, FALLBACK to our local DB products
+        if not results:
+            print(f"[DEBUG] Real-time search returned nothing. Falling back to local DB for keyword='{query}'...")
+            from django.db.models import Q
+            local_products = Product.objects.filter(Q(name__icontains=query) | Q(category__name__icontains=query))
+            
+            # If still nothing and we have a category, try filtering by that
+            if not local_products and category:
+                local_products = Product.objects.filter(category__name__iexact=category)
+            
+            # Limit results and serialize
+            results = [AmazonService._serialize_product(p) for p in local_products[:40]]
+            print(f"[DEBUG] Local DB fallback returned {len(results)} items")
+
+        return Response(results)
+    except Exception as e:
+        print(f"[DEBUG] Error in searchRealProducts: {e}")
+        return Response({'detail': f"Backend Error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
 def getRealProductDetails(request, asin):
